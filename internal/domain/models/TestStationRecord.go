@@ -1,12 +1,8 @@
 package models
 
-import (
-	"encoding/json"
-)
-
-type StationInformation struct {
+type TestStationRecord struct {
 	PartNumber       string       `json:"PartNumber"`
-	TestStation      string       `json:"TestStation"`
+	TestStation      string       `json:"TestStation"` // "PCBA", "Final", etc.
 	EntityType       string       `json:"EntityType"`
 	ProductLine      string       `json:"ProductLine"`
 	TestToolVersion  string       `json:"TestToolVersion"`
@@ -14,10 +10,4 @@ type StationInformation struct {
 	IsAllPassed      bool         `json:"IsAllPassed"`
 	ErrorCodes       string       `json:"ErrorCodes"`
 	LogisticData     LogisticData `json:"LogisticData"`
-}
-
-func UnmarshalStationInformation(data []byte) (StationInformation, error) {
-	var s StationInformation
-	err := json.Unmarshal(data, &s)
-	return s, err
 }
