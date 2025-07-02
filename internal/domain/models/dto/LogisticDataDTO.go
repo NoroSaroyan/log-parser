@@ -1,4 +1,4 @@
-package models
+package dto
 
 type LogisticDataDTO struct {
 	PCBANumber                  string `json:"PCBANumber"`

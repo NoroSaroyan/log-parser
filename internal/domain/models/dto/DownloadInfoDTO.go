@@ -1,4 +1,4 @@
-package models
+package dto
 
 type DownloadInfoDTO struct {
 	TestStation          string `json:"TestStation"`

@@ -1,59 +1,68 @@
 package repositories
 
 import (
+	"context"
 	"database/sql"
-	"log-parser/internal/domain/models"
+	"log-parser/internal/domain/models/db"
 )
 
 type logisticDataRepo struct {
 	db *sql.DB
 }
 
-func NewLogisticDataRepo(db *sql.DB) LogisticDataRepository {
+func NewLogisticDataRepo(db *sql.DB) *logisticDataRepo {
 	return &logisticDataRepo{db: db}
 }
 
-func (r *logisticDataRepo) Insert(data *models.LogisticDataDTO) (int, error) {
-	query := `INSERT INTO logistic_data 
-		(pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
-		supplier_hardware_version, manufacturer_hardware_version, manufacturer_software_version,
-		ble_mac, ble_sn, ble_version, ble_passwork_key,
-		ap_app_version, ap_kernel_version, tcu_iccid, phone_number, imei, imsi, production_date)
-		VALUES
-		($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
-		RETURNING id`
-	var id int
-	err := r.db.QueryRow(query,
-		data.PCBANumber, data.ProductSN, data.PartNumber, data.VPAppVersion, data.VPBootLoaderVersion, data.VPCoreVersion,
-		data.SupplierHardwareVersion, data.ManufacturerHardwareVersion, data.ManufacturerSoftwareVersion,
-		data.BleMac, data.BleSN, data.BleVersion, data.BlePassworkKey,
-		data.APAppVersion, data.APKernelVersion, data.TcuICCID, data.PhoneNumber, data.IMEI, data.IMSI, data.ProductionDate,
-	).Scan(&id)
-	return id, err
+func (r *logisticDataRepo) Insert(ctx context.Context, d *db.LogisticDataDB) error {
+	query := `
+    INSERT INTO logistic_data 
+    (pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
+    supplier_hardware_version, manufacturer_hardware_version, manufacturer_software_version,
+    ble_mac, ble_sn, ble_version, ble_passwork_key, ap_app_version, ap_kernel_version,
+    tcu_iccid, phone_number, imei, imsi, production_date)
+    VALUES
+    ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+    `
+	_, err := r.db.ExecContext(ctx, query,
+		d.PCBANumber, d.ProductSN, d.PartNumber, d.VPAppVersion, d.VPBootLoaderVersion, d.VPCoreVersion,
+		d.SupplierHardwareVersion, d.ManufacturerHardwareVersion, d.ManufacturerSoftwareVersion,
+		d.BleMac, d.BleSN, d.BleVersion, d.BlePassworkKey, d.APAppVersion, d.APKernelVersion,
+		d.TcuICCID, d.PhoneNumber, d.IMEI, d.IMSI, d.ProductionDate,
+	)
+	return err
 }
 
-func (r *logisticDataRepo) GetByPCBANumber(pcba string) (*models.LogisticDataDTO, error) {
-	query := `SELECT id, pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
-		supplier_hardware_version, manufacturer_hardware_version, manufacturer_software_version,
-		ble_mac, ble_sn, ble_version, ble_passwork_key,
-		ap_app_version, ap_kernel_version, tcu_iccid, phone_number, imei, imsi, production_date
-		FROM logistic_data WHERE pcba_number = $1`
-
-	row := r.db.QueryRow(query, pcba)
-	var data models.LogisticDataDTO
-	var id int
-	err := row.Scan(
-		&id,
-		&data.PCBANumber, &data.ProductSN, &data.PartNumber, &data.VPAppVersion, &data.VPBootLoaderVersion, &data.VPCoreVersion,
-		&data.SupplierHardwareVersion, &data.ManufacturerHardwareVersion, &data.ManufacturerSoftwareVersion,
-		&data.BleMac, &data.BleSN, &data.BleVersion, &data.BlePassworkKey,
-		&data.APAppVersion, &data.APKernelVersion, &data.TcuICCID, &data.PhoneNumber, &data.IMEI, &data.IMSI, &data.ProductionDate,
-	)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
+func (r *logisticDataRepo) GetByPCBANumber(ctx context.Context, pcba string) ([]*db.LogisticDataDB, error) {
+	query := `
+    SELECT pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
+    supplier_hardware_version, manufacturer_hardware_version, manufacturer_software_version,
+    ble_mac, ble_sn, ble_version, ble_passwork_key, ap_app_version, ap_kernel_version,
+    tcu_iccid, phone_number, imei, imsi, production_date
+    FROM logistic_data
+    WHERE pcba_number = $1
+    `
+	rows, err := r.db.QueryContext(ctx, query, pcba)
 	if err != nil {
 		return nil, err
 	}
-	return &data, nil
+	defer rows.Close()
+
+	var results []*db.LogisticDataDB
+	for rows.Next() {
+		var d db.LogisticDataDB
+		if err := rows.Scan(
+			&d.PCBANumber, &d.ProductSN, &d.PartNumber, &d.VPAppVersion, &d.VPBootLoaderVersion, &d.VPCoreVersion,
+			&d.SupplierHardwareVersion, &d.ManufacturerHardwareVersion, &d.ManufacturerSoftwareVersion,
+			&d.BleMac, &d.BleSN, &d.BleVersion, &d.BlePassworkKey, &d.APAppVersion, &d.APKernelVersion,
+			&d.TcuICCID, &d.PhoneNumber, &d.IMEI, &d.IMSI, &d.ProductionDate,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, &d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
 }

@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log-parser/internal/domain/models"
+	"log-parser/internal/domain/models/dto"
 	"strings"
 )
 
@@ -88,15 +88,15 @@ func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 		var fullStructure []interface{}
 		err := json.Unmarshal([]byte(block), &fullStructure)
 		if err == nil && len(fullStructure) == 3 {
-			var d models.DownloadInfoDTO
+			var d dto.DownloadInfoDTO
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[0])), &d); err != nil {
 				continue
 			}
-			var steps []models.TestStepDTO
+			var steps []dto.TestStepDTO
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[1])), &steps); err != nil {
 				continue
 			}
-			var tsr models.TestStationRecordDTO
+			var tsr dto.TestStationRecordDTO
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[2])), &tsr); err != nil {
 				continue
 			}
@@ -105,21 +105,21 @@ func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 			continue
 		}
 
-		var d models.DownloadInfoDTO
+		var d dto.DownloadInfoDTO
 		if json.Unmarshal([]byte(block), &d) == nil && d.TestStation != "" {
 			println("Accepted DownloadInfoDTO block")
 			filtered = append(filtered, block)
 			continue
 		}
 
-		var tsr models.TestStationRecordDTO
+		var tsr dto.TestStationRecordDTO
 		if json.Unmarshal([]byte(block), &tsr) == nil && tsr.TestStation != "" {
 			println("Accepted TestStationRecordDTO block")
 			filtered = append(filtered, block)
 			continue
 		}
 
-		var steps []models.TestStepDTO
+		var steps []dto.TestStepDTO
 		if json.Unmarshal([]byte(block), &steps) == nil && len(steps) > 0 {
 			println("Accepted TestStepDTO array block")
 			filtered = append(filtered, block)

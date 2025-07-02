@@ -1,4 +1,4 @@
-package models
+package db
 
 type TestStationRecordDB struct {
 	ID               int    `db:"id"`

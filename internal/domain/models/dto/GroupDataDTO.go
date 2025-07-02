@@ -1,4 +1,4 @@
-package models
+package dto
 
 type GroupedDataDTO struct {
 	Download  *DownloadInfoDTO

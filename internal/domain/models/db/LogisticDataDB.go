@@ -1,4 +1,4 @@
-package models
+package db
 
 type LogisticDataDB struct {
 	ID                          int    `db:"id"`

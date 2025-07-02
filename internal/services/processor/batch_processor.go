@@ -1,11 +1,11 @@
 package processor
 
 import (
-	"log-parser/internal/domain/models"
+	"log-parser/internal/domain/models/dto"
 )
 
 type GroupedData struct {
-	DownloadInfo       *models.DownloadInfoDTO
-	TestStations       []*models.TestStationRecordDTO
-	TestStepsByStation map[string][]*models.TestStepDTO
+	DownloadInfo       *dto.DownloadInfoDTO
+	TestStations       []*dto.TestStationRecordDTO
+	TestStepsByStation map[string][]*dto.TestStepDTO
 }

@@ -1,4 +1,4 @@
-package models
+package dto
 
 type TestStationRecordDTO struct {
 	PartNumber       string          `json:"PartNumber"`

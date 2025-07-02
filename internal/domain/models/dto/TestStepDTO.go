@@ -1,4 +1,4 @@
-package models
+package dto
 
 type TestStepDTO struct {
 	TestStepName        string `json:"TestStepName"`

@@ -1,4 +1,4 @@
-package models
+package db
 
 type DownloadInfoDB struct {
 	ID                   int    `db:"id"`

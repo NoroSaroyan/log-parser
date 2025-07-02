@@ -1,25 +1,25 @@
 package repositories
 
 import (
-	"log-parser/internal/domain/models"
+	"log-parser/internal/domain/models/db"
 )
 
 type DownloadInfoRepository interface {
-	Insert(info *models.DownloadInfoDTO) error
-	GetByPCBANumber(pcba string) (*models.DownloadInfoDTO, error)
+	Insert(info *db.DownloadInfoDB) error
+	GetByPCBANumber(pcba string) ([]*db.DownloadInfoDB, error)
 }
 
 type LogisticDataRepository interface {
-	Insert(data *models.LogisticDataDTO) (int, error)
-	GetByPCBANumber(pcba string) (*models.LogisticDataDTO, error)
+	Insert(data *db.LogisticDataDB) error
+	GetByPCBANumber(pcba string) ([]*db.LogisticDataDB, error)
 }
 
 type TestStationRecordRepository interface {
-	Insert(record *models.TestStationRecordDTO) (int, error)
-	GetByPCBANumber(pcba string) ([]*models.TestStationRecordDTO, error)
+	Insert(record *db.TestStationRecordDB) error
+	GetByPCBANumber(pcba string) ([]*db.TestStationRecordDB, error)
 }
 
 type TestStepRepository interface {
-	InsertBatch(steps []*models.TestStepDTO, stationID int) error
-	GetByPCBANumber(pcba string) ([]*models.TestStepDTO, error)
+	InsertBatch(steps []*db.TestStepDB, testStationRecordID int) error
+	GetByTestStationRecordID(recordID int) ([]*db.TestStepDB, error)
 }
