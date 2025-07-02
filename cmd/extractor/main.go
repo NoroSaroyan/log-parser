@@ -10,8 +10,8 @@ import (
 
 func main() {
 	start := time.Now()
-	inputFile := "large2.log"
-	outputFile := "output.json"
+	inputFile := "/Users/noriksaroyan/GolandProjects/log-parser/corporate_resources/file2.log"
+	outputFile := "/Users/noriksaroyan/GolandProjects/log-parser/corporate_resources/output.json"
 
 	logData, err := ioutil.ReadFile(inputFile)
 	if err != nil {
