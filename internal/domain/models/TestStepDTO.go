@@ -1,6 +1,6 @@
 package models
 
-type TestStep struct {
+type TestStepDTO struct {
 	TestStepName        string `json:"TestStepName"`
 	TestThresholdValue  string `json:"TestThresholdValue"`
 	TestMeasuredValue   string `json:"TestMeasuredValue"`

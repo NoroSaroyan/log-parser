@@ -5,9 +5,11 @@ import (
 	"io/ioutil"
 	"log"
 	"log-parser/internal/services/parser"
+	"time"
 )
 
 func main() {
+	start := time.Now()
 	inputFile := "large2.log"
 	outputFile := "output.json"
 
@@ -41,4 +43,6 @@ func main() {
 	}
 
 	fmt.Printf("Extracted %d relevant JSON blocks into %s\n", len(filteredBlocks), outputFile)
+	fmt.Println()
+	fmt.Println(time.Since(start))
 }

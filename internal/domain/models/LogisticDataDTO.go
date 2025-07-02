@@ -1,6 +1,6 @@
 package models
 
-type LogisticData struct {
+type LogisticDataDTO struct {
 	PCBANumber                  string `json:"PCBANumber"`
 	ProductSN                   string `json:"ProductSN"`
 	PartNumber                  string `json:"PartNumber"`

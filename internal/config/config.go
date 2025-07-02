@@ -12,12 +12,12 @@ type Config struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Name     string `yaml:"name"`
-	SSLMode  string `yaml:"sslmode"`
+	Host     string `yaml:"localhost"`
+	Port     int    `yaml:"5432"`
+	User     string `yaml:"admino"`
+	Password string `yaml:"admino"`
+	Name     string `yaml:"pandora_logs"`
+	SSLMode  string `yaml:"ssl-mode"`
 }
 
 type LoggerConfig struct {

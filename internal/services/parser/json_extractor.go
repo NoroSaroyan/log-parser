@@ -16,6 +16,7 @@ func ExtractJson(logs string) ([]string, error) {
 	var buffer bytes.Buffer
 	var insideBlock bool
 	var braceCount int
+	var bracketCount int
 
 	const prefixMarker = "]:"
 
@@ -35,17 +36,23 @@ func ExtractJson(logs string) ([]string, error) {
 		}
 
 		if !insideBlock {
-			openBraceIdx := strings.Index(strippedLine, "{")
+			openBraceIdx := strings.IndexAny(strippedLine, "{[")
 			if openBraceIdx != -1 {
 				insideBlock = true
 				buffer.Reset()
 				braceCount = 0
+				bracketCount = 0
 
+				// Start writing from the opening brace/bracket
 				buffer.WriteString(strippedLine[openBraceIdx:])
 				buffer.WriteByte('\n')
 
-				braceCount += strings.Count(strippedLine[openBraceIdx:], "{")
-				braceCount -= strings.Count(strippedLine[openBraceIdx:], "}")
+				// Count braces and brackets from that position
+				substr := strippedLine[openBraceIdx:]
+				braceCount += strings.Count(substr, "{")
+				braceCount -= strings.Count(substr, "}")
+				bracketCount += strings.Count(substr, "[")
+				bracketCount -= strings.Count(substr, "]")
 			}
 		} else {
 			buffer.WriteString(strippedLine)
@@ -53,8 +60,11 @@ func ExtractJson(logs string) ([]string, error) {
 
 			braceCount += strings.Count(strippedLine, "{")
 			braceCount -= strings.Count(strippedLine, "}")
+			bracketCount += strings.Count(strippedLine, "[")
+			bracketCount -= strings.Count(strippedLine, "]")
 
-			if braceCount == 0 {
+			// Close block only when both counts balanced
+			if braceCount == 0 && bracketCount == 0 {
 				blocks = append(blocks, buffer.String())
 				insideBlock = false
 			}
@@ -68,6 +78,7 @@ func ExtractJson(logs string) ([]string, error) {
 	return blocks, nil
 }
 
+// FilterRelevantJsonBlocks and toJSON unchanged...
 func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 	var filtered []string
 
@@ -77,37 +88,40 @@ func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 		var fullStructure []interface{}
 		err := json.Unmarshal([]byte(block), &fullStructure)
 		if err == nil && len(fullStructure) == 3 {
-			var d models.DownloadInfo
+			var d models.DownloadInfoDTO
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[0])), &d); err != nil {
 				continue
 			}
-			var steps []models.TestStep
+			var steps []models.TestStepDTO
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[1])), &steps); err != nil {
 				continue
 			}
-			var tsr models.TestStationRecord
+			var tsr models.TestStationRecordDTO
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[2])), &tsr); err != nil {
 				continue
 			}
-
+			println("Accepted triple structure block")
 			filtered = append(filtered, block)
 			continue
 		}
 
-		var d models.DownloadInfo
+		var d models.DownloadInfoDTO
 		if json.Unmarshal([]byte(block), &d) == nil && d.TestStation != "" {
+			println("Accepted DownloadInfoDTO block")
 			filtered = append(filtered, block)
 			continue
 		}
 
-		var tsr models.TestStationRecord
+		var tsr models.TestStationRecordDTO
 		if json.Unmarshal([]byte(block), &tsr) == nil && tsr.TestStation != "" {
+			println("Accepted TestStationRecordDTO block")
 			filtered = append(filtered, block)
 			continue
 		}
 
-		var steps []models.TestStep
+		var steps []models.TestStepDTO
 		if json.Unmarshal([]byte(block), &steps) == nil && len(steps) > 0 {
+			println("Accepted TestStepDTO array block")
 			filtered = append(filtered, block)
 			continue
 		}

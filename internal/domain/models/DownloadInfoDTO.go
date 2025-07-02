@@ -1,6 +1,6 @@
 package models
 
-type DownloadInfo struct {
+type DownloadInfoDTO struct {
 	TestStation          string `json:"TestStation"`
 	FlashEntityType      string `json:"FlashEntityType"`
 	TcuPCBANumber        string `json:"TcuPCBANumber"`

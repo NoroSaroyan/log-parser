@@ -4,12 +4,22 @@ import (
 	"log-parser/internal/domain/models"
 )
 
-type StationRepository interface {
-	Save(station *models.StationInformation) error
-	FindByID(id string) (*models.StationInformation, error)
+type DownloadInfoRepository interface {
+	Insert(info *models.DownloadInfoDTO) error
+	GetByPCBANumber(pcba string) (*models.DownloadInfoDTO, error)
 }
 
-type TestRepository interface {
-	Save(test *models.TestData) error
-	FindByID(id string) (*models.TestData, error)
+type LogisticDataRepository interface {
+	Insert(data *models.LogisticDataDTO) (int, error)
+	GetByPCBANumber(pcba string) (*models.LogisticDataDTO, error)
+}
+
+type TestStationRecordRepository interface {
+	Insert(record *models.TestStationRecordDTO) (int, error)
+	GetByPCBANumber(pcba string) ([]*models.TestStationRecordDTO, error)
+}
+
+type TestStepRepository interface {
+	InsertBatch(steps []*models.TestStepDTO, stationID int) error
+	GetByPCBANumber(pcba string) ([]*models.TestStepDTO, error)
 }
