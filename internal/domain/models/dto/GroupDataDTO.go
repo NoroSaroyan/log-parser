@@ -1,9 +1,7 @@
 package dto
 
 type GroupedDataDTO struct {
-	Download  *DownloadInfoDTO
-	Stations  []*TestStationRecordDTO
-	TestSteps []*TestStepDTO
+	DownloadInfo       DownloadInfoDTO
+	TestStationRecords []TestStationRecordDTO
+	TestSteps          [][]TestStepDTO // массив массивов тестов, каждый для TestStationRecord
 }
-
-var dataMap map[string]*GroupedDataDTO // key = PCBANumber
