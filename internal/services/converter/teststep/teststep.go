@@ -7,7 +7,6 @@ import (
 
 func ConvertToDB(dto dto.TestStepDTO, testStationRecordID int) db.TestStepDB {
 	return db.TestStepDB{
-		// ID omitted — assigned by DB
 		TestStepName:        dto.TestStepName,
 		TestThresholdValue:  dto.TestThresholdValue,
 		TestMeasuredValue:   dto.TestMeasuredValue,
@@ -20,7 +19,6 @@ func ConvertToDB(dto dto.TestStepDTO, testStationRecordID int) db.TestStepDB {
 
 func ConvertToDTO(db db.TestStepDB) dto.TestStepDTO {
 	return dto.TestStepDTO{
-		// no ID in DTO
 		TestStepName:        db.TestStepName,
 		TestThresholdValue:  db.TestThresholdValue,
 		TestMeasuredValue:   db.TestMeasuredValue,

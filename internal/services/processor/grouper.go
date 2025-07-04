@@ -23,7 +23,6 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 			group.DownloadInfo = v
 
 		case dto.TestStationRecordDTO:
-			//fmt.Printf("TestStationRecordDTO LogisticData: %+v\n", v.LogisticData)
 			key := v.LogisticData.PCBANumber
 			if key == "" {
 				return nil, fmt.Errorf("TestStationRecordDTO missing LogisticData.PCBANumber")

@@ -7,7 +7,6 @@ import (
 
 func ConvertToDB(dto dto.TestStationRecordDTO) db.TestStationRecordDB {
 	return db.TestStationRecordDB{
-		// ID omitted — assigned by DB
 		PartNumber:       dto.PartNumber,
 		TestStation:      dto.TestStation,
 		EntityType:       dto.EntityType,
@@ -22,7 +21,6 @@ func ConvertToDB(dto dto.TestStationRecordDTO) db.TestStationRecordDB {
 
 func ConvertToDTO(db db.TestStationRecordDB) dto.TestStationRecordDTO {
 	return dto.TestStationRecordDTO{
-		// no ID in DTO
 		PartNumber:       db.PartNumber,
 		TestStation:      db.TestStation,
 		EntityType:       db.EntityType,

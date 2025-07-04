@@ -63,7 +63,6 @@ func main() {
 			log.Printf("failed to close DB connection: %v", err)
 		}
 	}()
-
 	dispatcherService := dispatcher.NewDispatcherService(
 		appInstance.DownloadInfoService,
 		appInstance.LogisticService,

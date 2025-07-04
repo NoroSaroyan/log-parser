@@ -37,15 +37,13 @@ func (s *logisticDataService) InsertLogisticData(ctx context.Context, data dto.L
 }
 
 func (s *logisticDataService) GetOrInsertLogisticData(ctx context.Context, data dto.LogisticDataDTO) (int, error) {
-	// Try to find existing LogisticData
 	id, err := s.repo.GetIDByPCBANumber(ctx, data.PCBANumber)
 	if err == nil {
-		return id, nil // Found existing, return ID
+		return id, nil
 	}
 	if err != sql.ErrNoRows {
 		return 0, fmt.Errorf("failed to query LogisticData: %w", err)
 	}
 
-	// Not found, insert new record
 	return s.InsertLogisticData(ctx, data)
 }

@@ -24,7 +24,6 @@ type LoggerConfig struct {
 	Level string `yaml:"level"`
 }
 
-// LoadConfig reads a YAML config file from path and unmarshals it into Config struct.
 func LoadConfig(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 
 func ConvertToDB(dto dto.LogisticDataDTO) db.LogisticDataDB {
 	return db.LogisticDataDB{
-		// ID omitted — assigned by DB
 		PCBANumber:                  dto.PCBANumber,
 		ProductSN:                   dto.ProductSN,
 		PartNumber:                  dto.PartNumber,
@@ -33,7 +32,6 @@ func ConvertToDB(dto dto.LogisticDataDTO) db.LogisticDataDB {
 
 func ConvertToDTO(db db.LogisticDataDB) dto.LogisticDataDTO {
 	return dto.LogisticDataDTO{
-		// no ID in DTO
 		PCBANumber:                  db.PCBANumber,
 		ProductSN:                   db.ProductSN,
 		PartNumber:                  db.PartNumber,

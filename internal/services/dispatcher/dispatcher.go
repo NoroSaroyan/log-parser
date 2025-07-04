@@ -37,7 +37,6 @@ func NewDispatcherService(
 
 func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.GroupedDataDTO) error {
 	for _, group := range groups {
-		// Insert DownloadInfo
 		if (group.DownloadInfo != dto.DownloadInfoDTO{}) {
 			if err := s.downloadInfoService.InsertDownloadInfo(ctx, group.DownloadInfo); err != nil {
 				return fmt.Errorf("failed to insert DownloadInfo for PCBA %s: %w", group.DownloadInfo.TcuPCBANumber, err)
@@ -49,7 +48,6 @@ func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.Gro
 			var logisticDataID int
 			var err error
 
-			// Insert LogisticData
 			if (tsr.LogisticData != dto.LogisticDataDTO{}) {
 				logisticDataID, err = s.logisticDataService.GetOrInsertLogisticData(ctx, tsr.LogisticData)
 				if err != nil {
@@ -63,7 +61,6 @@ func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.Gro
 				return fmt.Errorf("missing LogisticData for PCBA %s: cannot insert TestStationRecord", tsr.LogisticData.PCBANumber)
 			}
 
-			// Insert TestStationRecord
 			testStationID, err := s.testStationService.InsertTestStationRecord(ctx, tsr, logisticDataID)
 			if err != nil {
 				return fmt.Errorf("failed to insert TestStationRecord for PCBA %s: %w", tsr.LogisticData.PCBANumber, err)
@@ -71,7 +68,6 @@ func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.Gro
 			testStationIDs = append(testStationIDs, testStationID)
 		}
 
-		// Insert TestSteps
 		for i, stepsSlice := range group.TestSteps {
 			if i >= len(testStationIDs) {
 				return fmt.Errorf("mismatch in TestSteps count and TestStationRecords count for PCBA %s", group.DownloadInfo.TcuPCBANumber)

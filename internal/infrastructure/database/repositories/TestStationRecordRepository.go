@@ -27,8 +27,6 @@ func (r *testStationRecordRepository) Insert(ctx context.Context, rec *db.TestSt
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
     RETURNING id
     `
-
-	// Scan the returned ID into rec.ID
 	err := r.db.QueryRowContext(ctx, query,
 		rec.PartNumber, rec.TestStation, rec.EntityType, rec.ProductLine,
 		rec.TestToolVersion, rec.TestFinishedTime, rec.IsAllPassed, rec.ErrorCodes, rec.LogisticDataID,
