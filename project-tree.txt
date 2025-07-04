@@ -1,0 +1,110 @@
+.
+├── CHANGELOG.md
+├── LICENSE
+├── Makefile
+├── README.md
+├── cmd
+│   └── main.go
+├── configs
+│   ├── config.dev.yaml
+│   ├── config.prod.yaml
+│   └── config.yaml
+├── corporate_resources
+│   ├── create_tables_schema.sql
+│   ├── mesrestapi.log
+│   └── mesrestapi2.log
+├── deployments
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── kubernetes
+│       ├── deployment.yaml
+│       └── service.yaml
+├── docs
+│   ├── API.md
+│   ├── ARCHITECTURE.md
+│   └── DEPLOYMENT.md
+├── go.mod
+├── go.sum
+├── internal
+│   ├── app
+│   │   └── app.go
+│   ├── config
+│   │   ├── config.go
+│   │   └── database.go
+│   ├── domain
+│   │   ├── models
+│   │   │   ├── db
+│   │   │   │   ├── DownloadInfoDB.go
+│   │   │   │   ├── LogisticDataDB.go
+│   │   │   │   ├── TestStationRecordDB.go
+│   │   │   │   └── TestStepDB.go
+│   │   │   └── dto
+│   │   │       ├── DownloadInfoDTO.go
+│   │   │       ├── GroupDataDTO.go
+│   │   │       ├── LogisticDataDTO.go
+│   │   │       ├── TestStationRecordDTO.go
+│   │   │       └── TestStepDTO.go
+│   │   └── repositories
+│   │       └── interfaces.go
+│   ├── handlers
+│   │   └── cli
+│   │       └── commands.go
+│   ├── infrastructure
+│   │   ├── database
+│   │   │   ├── connection.go
+│   │   │   ├── migrations
+│   │   │   └── repositories
+│   │   │       ├── DownloadInfoRepository.go
+│   │   │       ├── LogisticDataRepository.go
+│   │   │       ├── TestStationRecordRepository.go
+│   │   │       └── TestStepRepository.go
+│   │   └── logger
+│   │       └── logger.go
+│   └── services
+│       ├── converter
+│       │   ├── download
+│       │   │   └── donwloadinfo.go
+│       │   ├── logistic
+│       │   │   └── logisticdata.go
+│       │   ├── teststation
+│       │   │   └── teststationrecord.go
+│       │   └── teststep
+│       │       └── teststep.go
+│       ├── dispatcher
+│       │   └── dispatcher.go
+│       ├── downloadinfo
+│       │   └── service.go
+│       ├── logistic
+│       │   └── service.go
+│       ├── parser
+│       │   ├── file_processor.go
+│       │   ├── json_extractor.go
+│       │   └── json_parser.go
+│       ├── processor
+│       │   ├── grouper.go
+│       │   └── validator.go
+│       ├── teststation
+│       │   └── service.go
+│       └── teststep
+│           └── service.go
+├── pkg
+│   ├── errors
+│   │   └── errors.go
+│   └── utils
+│       ├── file_utils.go
+│       └── time_utils.go
+├── project-tree.txt
+├── scripts
+│   ├── build.sh
+│   ├── docker-build.sh
+│   └── test.sh
+└── tests
+    ├── integration
+    │   └── parser_test.go
+    ├── testdata
+    │   └── sample_logs
+    └── unit
+        ├── repositories
+        └── services
+
+46 directories, 62 files
