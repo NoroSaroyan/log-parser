@@ -6,7 +6,6 @@ import (
 )
 
 func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
-	// Map: pcbNumber -> GroupedDataDTO
 	groups := map[string]*dto.GroupedDataDTO{}
 
 	for _, item := range parsed {
@@ -24,6 +23,7 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 			group.DownloadInfo = v
 
 		case dto.TestStationRecordDTO:
+			//fmt.Printf("TestStationRecordDTO LogisticData: %+v\n", v.LogisticData)
 			key := v.LogisticData.PCBANumber
 			if key == "" {
 				return nil, fmt.Errorf("TestStationRecordDTO missing LogisticData.PCBANumber")
@@ -36,17 +36,15 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 			group.TestStationRecords = append(group.TestStationRecords, v)
 
 		case []dto.TestStepDTO:
-			// Тут нужно понять, к какой группе относится этот массив тестов
-			// Ищем в массиве TestStep с TestStepName == "PCBA Test", берем ThresholdValue как ключ
 			var key string
 			for _, step := range v {
-				if step.TestStepName == "PCBA Test" {
-					key = step.TestThresholdValue
+				if step.TestStepName == "PCBA Scan" {
+					key = step.TestMeasuredValue
 					break
 				}
 			}
 			if key == "" {
-				return nil, fmt.Errorf("TestStepDTO array missing PCBA Test step with threshold value")
+				return nil, fmt.Errorf("TestStepDTO array missing PCBA Scan step with measured value")
 			}
 			group, ok := groups[key]
 			if !ok {
@@ -60,7 +58,6 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 		}
 	}
 
-	// Преобразуем map в срез
 	result := make([]dto.GroupedDataDTO, 0, len(groups))
 	for _, g := range groups {
 		result = append(result, *g)

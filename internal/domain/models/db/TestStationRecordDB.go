@@ -10,5 +10,5 @@ type TestStationRecordDB struct {
 	TestFinishedTime string `db:"test_finished_time"`
 	IsAllPassed      bool   `db:"is_all_passed"`
 	ErrorCodes       string `db:"error_codes"`
-	LogisticDataID   uint   `db:"logistic_data_id"`
+	LogisticDataID   int    `db:"logistic_data_id"`
 }

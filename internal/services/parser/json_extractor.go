@@ -100,28 +100,28 @@ func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[2])), &tsr); err != nil {
 				continue
 			}
-			println("Accepted triple structure block")
+			//println("Accepted triple structure block")
 			filtered = append(filtered, block)
 			continue
 		}
 
 		var d dto.DownloadInfoDTO
 		if json.Unmarshal([]byte(block), &d) == nil && d.TestStation != "" {
-			println("Accepted DownloadInfoDTO block")
+			//println("Accepted DownloadInfo block")
 			filtered = append(filtered, block)
 			continue
 		}
 
 		var tsr dto.TestStationRecordDTO
 		if json.Unmarshal([]byte(block), &tsr) == nil && tsr.TestStation != "" {
-			println("Accepted TestStationRecordDTO block")
+			//println("Accepted TestStationRecord block")
 			filtered = append(filtered, block)
 			continue
 		}
 
 		var steps []dto.TestStepDTO
 		if json.Unmarshal([]byte(block), &steps) == nil && len(steps) > 0 {
-			println("Accepted TestStepDTO array block")
+			//println("Accepted TestStep array block")
 			filtered = append(filtered, block)
 			continue
 		}

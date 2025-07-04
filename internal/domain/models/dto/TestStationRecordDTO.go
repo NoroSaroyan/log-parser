@@ -9,6 +9,6 @@ type TestStationRecordDTO struct {
 	TestFinishedTime string          `json:"TestFinishedTime"`
 	IsAllPassed      bool            `json:"IsAllPassed"`
 	ErrorCodes       string          `json:"ErrorCodes"`
-	LogisticDataID   uint            `json:"LogisticDataID"`
-	LogisticData     LogisticDataDTO `json:"LogisticDataDTO"`
+	LogisticDataID   int             `json:"LogisticDataID"`
+	LogisticData     LogisticDataDTO `json:"LogisticData"`
 }

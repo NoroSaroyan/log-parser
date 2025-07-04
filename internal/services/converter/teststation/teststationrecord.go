@@ -1,4 +1,4 @@
-package converter
+package teststation
 
 import (
 	db "log-parser/internal/domain/models/db"

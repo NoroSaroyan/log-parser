@@ -1,20 +1,26 @@
-package database
+package repositories
 
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log-parser/internal/domain/models/db"
 )
 
-type logisticDataRepo struct {
+type logisticDataRepository struct {
 	db *sql.DB
 }
 
-func NewLogisticDataRepo(db *sql.DB) *logisticDataRepo {
-	return &logisticDataRepo{db: db}
+func (r *logisticDataRepository) GetByPartNumber(ctx context.Context, partNumber string) ([]*db.LogisticDataDB, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (r *logisticDataRepo) Insert(ctx context.Context, d *db.LogisticDataDB) error {
+func NewLogisticDataRepository(db *sql.DB) *logisticDataRepository {
+	return &logisticDataRepository{db: db}
+}
+
+func (r *logisticDataRepository) Insert(ctx context.Context, d *db.LogisticDataDB) error {
 	query := `
     INSERT INTO logistic_data 
     (pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
@@ -23,17 +29,25 @@ func (r *logisticDataRepo) Insert(ctx context.Context, d *db.LogisticDataDB) err
     tcu_iccid, phone_number, imei, imsi, production_date)
     VALUES
     ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+    RETURNING id
     `
-	_, err := r.db.ExecContext(ctx, query,
+
+	err := r.db.QueryRowContext(ctx, query,
 		d.PCBANumber, d.ProductSN, d.PartNumber, d.VPAppVersion, d.VPBootLoaderVersion, d.VPCoreVersion,
 		d.SupplierHardwareVersion, d.ManufacturerHardwareVersion, d.ManufacturerSoftwareVersion,
 		d.BleMac, d.BleSN, d.BleVersion, d.BlePassworkKey, d.APAppVersion, d.APKernelVersion,
 		d.TcuICCID, d.PhoneNumber, d.IMEI, d.IMSI, d.ProductionDate,
-	)
-	return err
+	).Scan(&d.ID)
+	if err != nil {
+		return fmt.Errorf("failed to insert LogisticData and retrieve ID: %w", err)
+	}
+	if d.ID == 0 {
+		return fmt.Errorf("unexpected: inserted LogisticData returned ID=0")
+	}
+	return nil
 }
 
-func (r *logisticDataRepo) GetByPCBANumber(ctx context.Context, pcba string) ([]*db.LogisticDataDB, error) {
+func (r *logisticDataRepository) GetByPCBANumber(ctx context.Context, pcba string) ([]*db.LogisticDataDB, error) {
 	query := `
     SELECT pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
     supplier_hardware_version, manufacturer_hardware_version, manufacturer_software_version,
@@ -65,4 +79,22 @@ func (r *logisticDataRepo) GetByPCBANumber(ctx context.Context, pcba string) ([]
 		return nil, err
 	}
 	return results, nil
+}
+
+func (r *logisticDataRepository) GetIDByPCBANumber(ctx context.Context, pcba string) (int, error) {
+	query := `
+        SELECT id
+        FROM logistic_data
+        WHERE pcba_number = $1
+        LIMIT 1
+    `
+	var id int
+	err := r.db.QueryRowContext(ctx, query, pcba).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, err
+		}
+		return 0, err
+	}
+	return id, nil
 }

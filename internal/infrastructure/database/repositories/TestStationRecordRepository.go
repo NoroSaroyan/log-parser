@@ -1,34 +1,48 @@
-package database
+package repositories
 
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log-parser/internal/domain/models/db"
 )
 
-type testStationRecordRepo struct {
+type testStationRecordRepository struct {
 	db *sql.DB
 }
 
-func NewTestStationRecordRepo(db *sql.DB) *testStationRecordRepo {
-	return &testStationRecordRepo{db: db}
+func (r *testStationRecordRepository) GetByPartNumber(ctx context.Context, partNumber string) ([]*db.TestStationRecordDB, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (r *testStationRecordRepo) Insert(ctx context.Context, rec *db.TestStationRecordDB) error {
+func NewTestStationRecordRepository(db *sql.DB) *testStationRecordRepository {
+	return &testStationRecordRepository{db: db}
+}
+
+func (r *testStationRecordRepository) Insert(ctx context.Context, rec *db.TestStationRecordDB) error {
 	query := `
     INSERT INTO test_station_record 
     (part_number, test_station, entity_type, product_line, test_tool_version, test_finished_time, is_all_passed, error_codes, logistic_data_id)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+    RETURNING id
     `
-	_, err := r.db.ExecContext(ctx, query,
+
+	// Scan the returned ID into rec.ID
+	err := r.db.QueryRowContext(ctx, query,
 		rec.PartNumber, rec.TestStation, rec.EntityType, rec.ProductLine,
 		rec.TestToolVersion, rec.TestFinishedTime, rec.IsAllPassed, rec.ErrorCodes, rec.LogisticDataID,
-	)
-	return err
+	).Scan(&rec.ID)
+	if err != nil {
+		return fmt.Errorf("failed to insert TestStationRecord and retrieve ID: %w", err)
+	}
+	if rec.ID == 0 {
+		return fmt.Errorf("unexpected: inserted TestStationRecord returned ID=0")
+	}
+	return nil
 }
 
-func (r *testStationRecordRepo) GetByPCBANumber(ctx context.Context, pcba string) ([]*db.TestStationRecordDB, error) {
-	// Join with logistic_data to filter by pcba_number
+func (r *testStationRecordRepository) GetByPCBANumber(ctx context.Context, pcba string) ([]*db.TestStationRecordDB, error) {
 	query := `
     SELECT tsr.id, tsr.part_number, tsr.test_station, tsr.entity_type, tsr.product_line, tsr.test_tool_version,
            tsr.test_finished_time, tsr.is_all_passed, tsr.error_codes, tsr.logistic_data_id

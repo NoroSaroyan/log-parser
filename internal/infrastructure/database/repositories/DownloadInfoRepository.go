@@ -1,4 +1,4 @@
-package database
+package repositories
 
 import (
 	"context"
@@ -6,18 +6,25 @@ import (
 	"log-parser/internal/domain/models/db"
 )
 
-type downloadInfoRepo struct {
+type downloadInfoRepository struct {
 	db *sql.DB
 }
 
-func NewDownloadInfoRepo(db *sql.DB) *downloadInfoRepo {
-	return &downloadInfoRepo{db: db}
+func (r *downloadInfoRepository) GetByPartNumber(ctx context.Context, partNumber string) ([]*db.DownloadInfoDB, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (r *downloadInfoRepo) Insert(ctx context.Context, d *db.DownloadInfoDB) error {
-	query := `INSERT INTO download_info 
-      (test_station, flash_entity_type, tcu_pcba_number, flash_elapsed_time, tcu_entity_flash_state, part_number, product_line, download_tool_version, download_finished_time)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`
+func NewDownloadInfoRepository(db *sql.DB) *downloadInfoRepository {
+	return &downloadInfoRepository{db: db}
+}
+func (r *downloadInfoRepository) Insert(ctx context.Context, d *db.DownloadInfoDB) error {
+	query := `
+	INSERT INTO download_info 
+	(test_station, flash_entity_type, tcu_pcba_number, flash_elapsed_time, tcu_entity_flash_state, part_number, product_line, download_tool_version, download_finished_time)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+	ON CONFLICT (tcu_pcba_number) DO NOTHING
+	`
 
 	_, err := r.db.ExecContext(ctx, query,
 		d.TestStation, d.FlashEntityType, d.TcuPCBANumber, d.FlashElapsedTime,
@@ -26,7 +33,7 @@ func (r *downloadInfoRepo) Insert(ctx context.Context, d *db.DownloadInfoDB) err
 	return err
 }
 
-func (r *downloadInfoRepo) GetByPCBANumber(ctx context.Context, pcba string) ([]*db.DownloadInfoDB, error) {
+func (r *downloadInfoRepository) GetByPCBANumber(ctx context.Context, pcba string) ([]*db.DownloadInfoDB, error) {
 	query := `SELECT test_station, flash_entity_type, tcu_pcba_number, flash_elapsed_time, tcu_entity_flash_state,
         part_number, product_line, download_tool_version, download_finished_time
         FROM download_info WHERE tcu_pcba_number = $1`

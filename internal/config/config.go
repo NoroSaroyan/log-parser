@@ -1,9 +1,9 @@
 package config
 
 import (
-	"os"
-
+	_ "github.com/lib/pq"
 	"gopkg.in/yaml.v3"
+	"os"
 )
 
 type Config struct {
@@ -12,18 +12,19 @@ type Config struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `yaml:"localhost"`
-	Port     int    `yaml:"5432"`
-	User     string `yaml:"admino"`
-	Password string `yaml:"admino"`
-	Name     string `yaml:"pandora_logs"`
-	SSLMode  string `yaml:"ssl-mode"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Name     string `yaml:"name"`
+	SSLMode  string `yaml:"sslmode"`
 }
 
 type LoggerConfig struct {
 	Level string `yaml:"level"`
 }
 
+// LoadConfig reads a YAML config file from path and unmarshals it into Config struct.
 func LoadConfig(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -31,12 +32,10 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	defer f.Close()
 
-	var cfg Config
+	cfg := &Config{}
 	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&cfg)
-	if err != nil {
+	if err := decoder.Decode(cfg); err != nil {
 		return nil, err
 	}
-
-	return &cfg, nil
+	return cfg, nil
 }

@@ -1,4 +1,4 @@
-package database
+package repositories
 
 import (
 	"context"
@@ -6,15 +6,20 @@ import (
 	"log-parser/internal/domain/models/db"
 )
 
-type testStepRepo struct {
+type testStepRepository struct {
 	db *sql.DB
 }
 
-func NewTestStepRepo(db *sql.DB) *testStepRepo {
-	return &testStepRepo{db: db}
+func (r *testStepRepository) GetByPartNumber(ctx context.Context, partNumber string) ([]*db.TestStepDB, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (r *testStepRepo) InsertBatch(ctx context.Context, steps []*db.TestStepDB, testStationRecordID int) error {
+func NewTestStepRepository(db *sql.DB) *testStepRepository {
+	return &testStepRepository{db: db}
+}
+
+func (r *testStepRepository) InsertBatch(ctx context.Context, steps []*db.TestStepDB, testStationRecordID int) error {
 	query := `
     INSERT INTO test_step 
     (test_step_name, test_threshold_value, test_measured_value, test_step_elapsed_time, test_step_result, test_step_error_code, test_station_record_id)
@@ -43,7 +48,7 @@ func (r *testStepRepo) InsertBatch(ctx context.Context, steps []*db.TestStepDB, 
 	return tx.Commit()
 }
 
-func (r *testStepRepo) GetByTestStationRecordID(ctx context.Context, recordID int) ([]*db.TestStepDB, error) {
+func (r *testStepRepository) GetByTestStationRecordID(ctx context.Context, recordID int) ([]*db.TestStepDB, error) {
 	query := `
     SELECT test_step_name, test_threshold_value, test_measured_value, test_step_elapsed_time, test_step_result, test_step_error_code
     FROM test_step
