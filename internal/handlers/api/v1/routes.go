@@ -1,0 +1,31 @@
+package v1
+
+import (
+	"github.com/go-chi/chi/v5"
+	"log-parser/internal/services/downloadinfo"
+	"log-parser/internal/services/logistic"
+	"log-parser/internal/services/teststation"
+	"log-parser/internal/services/teststep"
+)
+
+// RegisterAPIV1 строит и монтирует группу /api/v1
+func RegisterAPIV1(r chi.Router,
+	downloadSvc downloadinfo.DownloadInfoService,
+	logisticSvc logistic.LogisticDataService,
+	testStationSvc teststation.TestStationService,
+	testStepSvc teststep.TestStepService,
+) {
+	r.Route("/api/v1", func(r chi.Router) {
+		// Применяем JSON middleware ко всем трем роутам
+		r.With(JSON...).
+			Get("/download", NewDownloadHandler(downloadSvc).Get)
+
+		finalH := NewTestStationHandler("Final", logisticSvc, testStationSvc, testStepSvc)
+		r.With(JSON...).
+			Get("/final", finalH.Get)
+
+		pcbaH := NewTestStationHandler("PCBA", logisticSvc, testStationSvc, testStepSvc)
+		r.With(JSON...).
+			Get("/pcba", pcbaH.Get)
+	})
+}

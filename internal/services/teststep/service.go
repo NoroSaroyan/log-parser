@@ -11,6 +11,7 @@ import (
 
 type TestStepService interface {
 	InsertTestSteps(ctx context.Context, steps []dto.TestStepDTO, testStationRecordID int) error
+	GetByTestStationRecordID(ctx context.Context, testStationRecordID int) ([]dto.TestStepDTO, error)
 }
 
 type testStepService struct {
@@ -33,4 +34,18 @@ func (s *testStepService) InsertTestSteps(ctx context.Context, steps []dto.TestS
 	}
 
 	return nil
+}
+
+func (s *testStepService) GetByTestStationRecordID(ctx context.Context, testStationRecordID int) ([]dto.TestStepDTO, error) {
+	dbSteps, err := s.repo.GetByTestStationRecordID(ctx, testStationRecordID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get TestSteps by TestStationRecordID: %w", err)
+	}
+
+	var dtos []dto.TestStepDTO
+	for _, dbStep := range dbSteps {
+		dtos = append(dtos, teststep.ConvertToDTO(*dbStep))
+	}
+
+	return dtos, nil
 }

@@ -10,6 +10,7 @@ import (
 
 type TestStationService interface {
 	InsertTestStationRecord(ctx context.Context, data dto.TestStationRecordDTO, logisticDataID int) (int, error)
+	GetByPCBANumber(ctx context.Context, pcbaNumber string) ([]dto.TestStationRecordDTO, error)
 }
 
 type testStationService struct {
@@ -32,4 +33,18 @@ func (s *testStationService) InsertTestStationRecord(ctx context.Context, data d
 	}
 
 	return dbModel.ID, nil
+}
+
+func (s *testStationService) GetByPCBANumber(ctx context.Context, pcbaNumber string) ([]dto.TestStationRecordDTO, error) {
+	dbRecords, err := s.repo.GetByPCBANumber(ctx, pcbaNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get TestStationRecords by PCBA number: %w", err)
+	}
+
+	var dtos []dto.TestStationRecordDTO
+	for _, dbRec := range dbRecords {
+		dtos = append(dtos, teststation.ConvertToDTO(*dbRec))
+	}
+
+	return dtos, nil
 }

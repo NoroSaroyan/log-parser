@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Database DatabaseConfig `yaml:"database"`
 	Logger   LoggerConfig   `yaml:"logger"`
+	Server   ServerConfig   `yaml:"server"`
 }
 
 type DatabaseConfig struct {
@@ -37,4 +38,8 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 	return cfg, nil
+}
+
+type ServerConfig struct {
+	Address string `yaml:"address"`
 }

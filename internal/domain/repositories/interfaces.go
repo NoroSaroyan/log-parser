@@ -7,15 +7,17 @@ import (
 
 type DownloadInfoRepository interface {
 	Insert(ctx context.Context, info *db.DownloadInfoDB) error
-	GetByPCBANumber(ctx context.Context, pcba string) ([]*db.DownloadInfoDB, error)
-	GetByPartNumber(ctx context.Context, partNumber string) ([]*db.DownloadInfoDB, error)
+	GetByPCBANumber(ctx context.Context, pcba string) (*db.DownloadInfoDB, error)
+	GetByPartNumber(ctx context.Context, partNumber string) (*db.DownloadInfoDB, error)
 }
 
 type LogisticDataRepository interface {
 	Insert(ctx context.Context, data *db.LogisticDataDB) error
-	GetByPCBANumber(ctx context.Context, pcba string) ([]*db.LogisticDataDB, error)
+	GetAllByPCBANumber(ctx context.Context, pcba string) ([]*db.LogisticDataDB, error)
 	GetByPartNumber(ctx context.Context, partNumber string) ([]*db.LogisticDataDB, error)
 	GetIDByPCBANumber(ctx context.Context, pcba string) (int, error)
+	GetById(ctx context.Context, id int) (*db.LogisticDataDB, error)
+	GetByPCBANumber(ctx context.Context, pcba string) (*db.LogisticDataDB, error)
 }
 
 type TestStationRecordRepository interface {

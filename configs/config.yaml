@@ -1,10 +1,54 @@
 database:
   host: localhost
   port: 5432
-  user: admino
-  password: admino
+  user: val
+  password: val
   name: pandora_logs
   sslmode: disable
+  max_open_conns: 25        # Maximum open connections to the DB
+  max_idle_conns: 10        # Maximum idle connections in the pool
+  conn_max_lifetime: 30m    # Max lifetime of a connection (e.g. 30 minutes)
 
 logger:
-  level: info
+  level: info               # debug, info, warn, error
+  format: json              # json or text
+  output: stdout            # stdout or a file path
+  file:
+    path: ./logs/app.log    # file path if output is file
+    max_size_mb: 100        # max file size before rotation (MB)
+    max_backups: 7          # number of backups to keep
+    max_age_days: 30        # max age of a log file before deletion (days)
+    compress: true          # compress old log files
+
+server:
+  address: ":8080"          # listen address and port
+  read_timeout: 10s         # max duration for reading the entire request
+  write_timeout: 15s        # max duration before timing out writes of the response
+  idle_timeout: 60s         # max time to wait for the next request when keep-alives enabled
+  shutdown_timeout: 15s     # max time to wait for graceful shutdown
+
+metrics:
+  enabled: true             # enable metrics endpoint (Prometheus, etc)
+  path: /metrics            # path for metrics endpoint
+
+tracing:
+  enabled: false            # enable distributed tracing (Jaeger, Zipkin, etc)
+  endpoint: ""              # tracing server endpoint URL
+
+security:
+  enable_tls: false         # enable HTTPS with TLS certs
+  cert_file: ""             # path to TLS cert file
+  key_file: ""              # path to TLS key file
+
+cors:
+  allowed_origins:
+    - "https://example.com"
+    - "https://app.example.com"
+  allowed_methods:
+    - GET
+    - POST
+    - OPTIONS
+  allowed_headers:
+    - Authorization
+    - Content-Type
+  allow_credentials: true

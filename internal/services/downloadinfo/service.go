@@ -2,6 +2,7 @@ package downloadinfo
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log-parser/internal/domain/models/dto"
 	"log-parser/internal/domain/repositories"
@@ -10,6 +11,7 @@ import (
 
 type DownloadInfoService interface {
 	InsertDownloadInfo(ctx context.Context, data dto.DownloadInfoDTO) error
+	GetByPCBANumber(ctx context.Context, pcbaNumber string) (dto.DownloadInfoDTO, error)
 }
 
 type downloadInfoService struct {
@@ -27,4 +29,16 @@ func (s *downloadInfoService) InsertDownloadInfo(ctx context.Context, data dto.D
 		return fmt.Errorf("failed to insert DownloadInfo: %w", err)
 	}
 	return nil
+}
+func (s *downloadInfoService) GetByPCBANumber(ctx context.Context, pcbaNumber string) (dto.DownloadInfoDTO, error) {
+	dbModel, err := s.repo.GetByPCBANumber(ctx, pcbaNumber)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return dto.DownloadInfoDTO{}, nil
+		}
+		return dto.DownloadInfoDTO{}, fmt.Errorf("failed to get LogisticData by ID: %w", err)
+	}
+
+	dtoModel := download.ConvertToDTO(*dbModel)
+	return dtoModel, nil
 }
