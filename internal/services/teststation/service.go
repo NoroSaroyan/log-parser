@@ -6,6 +6,7 @@ import (
 	"log-parser/internal/domain/models/dto"
 	"log-parser/internal/domain/repositories"
 	"log-parser/internal/services/converter/teststation"
+	"strings"
 )
 
 type TestStationService interface {
@@ -22,6 +23,14 @@ func NewTestStationService(repo repositories.TestStationRecordRepository) TestSt
 }
 
 func (s *testStationService) InsertTestStationRecord(ctx context.Context, data dto.TestStationRecordDTO, logisticDataID int) (int, error) {
+	data.PartNumber = strings.TrimSpace(data.PartNumber)
+	data.TestStation = strings.TrimSpace(data.TestStation)
+	data.EntityType = strings.TrimSpace(data.EntityType)
+	data.ProductLine = strings.TrimSpace(data.ProductLine)
+	data.TestToolVersion = strings.TrimSpace(data.TestToolVersion)
+	data.TestFinishedTime = strings.TrimSpace(data.TestFinishedTime)
+	data.ErrorCodes = strings.TrimSpace(data.ErrorCodes)
+
 	dbModel := teststation.ConvertToDB(data)
 	dbModel.LogisticDataID = logisticDataID
 
@@ -36,6 +45,8 @@ func (s *testStationService) InsertTestStationRecord(ctx context.Context, data d
 }
 
 func (s *testStationService) GetByPCBANumber(ctx context.Context, pcbaNumber string) ([]dto.TestStationRecordDTO, error) {
+	pcbaNumber = strings.TrimSpace(pcbaNumber)
+
 	dbRecords, err := s.repo.GetByPCBANumber(ctx, pcbaNumber)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get TestStationRecords by PCBA number: %w", err)

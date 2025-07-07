@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"log"
 	"log-parser/internal/services/downloadinfo"
 	"net/http"
 )
@@ -25,6 +26,7 @@ func (h *DownloadHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	dto, err := h.svc.GetByPCBANumber(r.Context(), pcba)
 	if err != nil {
+		log.Printf("GetByPCBANumber error: %v", err)
 		respondError(w, http.StatusInternalServerError, "internal error")
 		return
 	}

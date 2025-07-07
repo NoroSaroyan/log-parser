@@ -8,7 +8,6 @@ import (
 	"log-parser/internal/services/teststep"
 )
 
-// RegisterAPIV1 строит и монтирует группу /api/v1
 func RegisterAPIV1(r chi.Router,
 	downloadSvc downloadinfo.DownloadInfoService,
 	logisticSvc logistic.LogisticDataService,
@@ -16,7 +15,6 @@ func RegisterAPIV1(r chi.Router,
 	testStepSvc teststep.TestStepService,
 ) {
 	r.Route("/api/v1", func(r chi.Router) {
-		// Применяем JSON middleware ко всем трем роутам
 		r.With(JSON...).
 			Get("/download", NewDownloadHandler(downloadSvc).Get)
 

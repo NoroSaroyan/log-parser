@@ -3,24 +3,28 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"log"
 	"log-parser/internal/domain/models/db"
 	"log-parser/internal/domain/repositories"
 )
 
-type downloadInfoRepository struct {
+type DownloadInfoRepository struct {
 	db *sql.DB
 }
 
-func (r *downloadInfoRepository) GetByPartNumber(ctx context.Context, partNumber string) (*db.DownloadInfoDB, error) {
+func (r *DownloadInfoRepository) GetByPartNumber(ctx context.Context, partNumber string) (*db.DownloadInfoDB, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func NewDownloadInfoRepository(db *sql.DB) *downloadInfoRepository {
-	return &downloadInfoRepository{db: db}
+func NewDownloadInfoRepository(db *sql.DB) *DownloadInfoRepository {
+	if db == nil {
+		log.Fatal("DB is nil in NewDownloadInfoRepository")
+	}
+	return &DownloadInfoRepository{db: db}
 }
 
-func (r *downloadInfoRepository) Insert(ctx context.Context, d *db.DownloadInfoDB) error {
+func (r *DownloadInfoRepository) Insert(ctx context.Context, d *db.DownloadInfoDB) error {
 	query := `
 	INSERT INTO download_info 
 	(test_station, flash_entity_type, tcu_pcba_number, flash_elapsed_time, tcu_entity_flash_state, part_number, product_line, download_tool_version, download_finished_time)
@@ -35,7 +39,7 @@ func (r *downloadInfoRepository) Insert(ctx context.Context, d *db.DownloadInfoD
 	return err
 }
 
-func (r *downloadInfoRepository) GetByPCBANumber(ctx context.Context, pcba string) (*db.DownloadInfoDB, error) {
+func (r *DownloadInfoRepository) GetByPCBANumber(ctx context.Context, pcba string) (*db.DownloadInfoDB, error) {
 	query := `
 	SELECT test_station, flash_entity_type, tcu_pcba_number, flash_elapsed_time, 
 	       tcu_entity_flash_state, part_number, product_line, download_tool_version, download_finished_time
@@ -66,4 +70,4 @@ func (r *downloadInfoRepository) GetByPCBANumber(ctx context.Context, pcba strin
 	return &d, nil
 }
 
-var _ repositories.DownloadInfoRepository = (*downloadInfoRepository)(nil)
+var _ repositories.DownloadInfoRepository = (*DownloadInfoRepository)(nil)
