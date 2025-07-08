@@ -24,41 +24,53 @@ func NewTestStationHandler(stationType string,
 }
 
 func (h *TestStationHandler) Get(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	pcba := r.URL.Query().Get("pcbanumber")
 	if pcba == "" {
 		respondError(w, http.StatusBadRequest, "pcbanumber is required")
 		return
 	}
 
-	// 1) Берём все записи TestStationRecord с нужным stationType
-	records, err := h.testStationSvc.GetByPCBANumber(r.Context(), pcba)
+	// Get DTOs for response
+	records, err := h.testStationSvc.GetByPCBANumber(ctx, pcba)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to fetch records")
 		return
 	}
 
-	// Фильтруем по stationType
+	// Get DB records with IDs for fetching steps
+	dbRecords, err := h.testStationSvc.GetDbObjectsByPCBANumber(ctx, pcba)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to fetch DB records")
+		return
+	}
+
+	// Build response
 	var out []any
-	for _, rec := range records {
+	for i, rec := range records {
 		if rec.TestStation != h.stationType {
 			continue
 		}
 
-		// 2) Получаем LogisticData
-		logDTO, err := h.logisticSvc.GetByPCBANumber(r.Context(), pcba)
+		logDTO, err := h.logisticSvc.GetByPCBANumber(ctx, pcba)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "failed to fetch logistic")
 			return
 		}
 		rec.LogisticData = logDTO
 
-		// 3) Получаем шаги теста
-		steps, err := h.testStepSvc.GetByTestStationRecordID(r.Context(), rec.LogisticDataID)
+		// Use matching DB record ID
+		if i >= len(dbRecords) {
+			respondError(w, http.StatusInternalServerError, "record mismatch between DTOs and DBs")
+			return
+		}
+		steps, err := h.testStepSvc.GetByTestStationRecordID(ctx, dbRecords[i].ID)
 		if err != nil {
 			respondError(w, http.StatusInternalServerError, "failed to fetch steps")
 			return
 		}
-		// Вложенный JSON-поле — TestSteps
+
 		out = append(out, struct {
 			dto.TestStationRecordDTO
 			TestSteps []dto.TestStepDTO `json:"TestSteps"`

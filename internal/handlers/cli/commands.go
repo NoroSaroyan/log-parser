@@ -19,7 +19,6 @@ import (
 	"log-parser/internal/services/processor"
 )
 
-// Run parses flags and runs the CLI application.
 func Run() error {
 	mode := flag.String("mode", "process", "Mode to run: process (default), ...")
 	configPath := flag.String("config", "configs/config.yaml", "Path to config file")
@@ -134,7 +133,6 @@ func readFileContent(path string) ([]byte, error) {
 	defer f.Close()
 
 	if strings.HasSuffix(strings.ToLower(path), ".gz") {
-		// Decompress gzip
 		gr, err := gzip.NewReader(f)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gzip reader: %w", err)
@@ -153,6 +151,5 @@ func readFileContent(path string) ([]byte, error) {
 		return buf.Bytes(), nil
 	}
 
-	// Regular file read
 	return os.ReadFile(path)
 }

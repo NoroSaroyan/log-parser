@@ -3,6 +3,7 @@ package teststation
 import (
 	"context"
 	"fmt"
+	"log-parser/internal/domain/models/db"
 	"log-parser/internal/domain/models/dto"
 	"log-parser/internal/domain/repositories"
 	"log-parser/internal/services/converter/teststation"
@@ -12,6 +13,7 @@ import (
 type TestStationService interface {
 	InsertTestStationRecord(ctx context.Context, data dto.TestStationRecordDTO, logisticDataID int) (int, error)
 	GetByPCBANumber(ctx context.Context, pcbaNumber string) ([]dto.TestStationRecordDTO, error)
+	GetDbObjectsByPCBANumber(ctx context.Context, pcbaNumber string) ([]*db.TestStationRecordDB, error)
 }
 
 type testStationService struct {
@@ -58,4 +60,21 @@ func (s *testStationService) GetByPCBANumber(ctx context.Context, pcbaNumber str
 	}
 
 	return dtos, nil
+}
+func (s *testStationService) GetDbObjectsByPCBANumber(ctx context.Context, pcbaNumber string) ([]*db.TestStationRecordDB, error) {
+	pcbaNumber = strings.TrimSpace(pcbaNumber)
+	if pcbaNumber == "" {
+		return nil, fmt.Errorf("pcbaNumber cannot be empty")
+	}
+
+	dbRecords, err := s.repo.GetByPCBANumber(ctx, pcbaNumber)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get TestStationRecords by PCBA number: %w", err)
+	}
+
+	if len(dbRecords) == 0 {
+		return nil, fmt.Errorf("no TestStationRecords found for PCBA number: %s", pcbaNumber)
+	}
+
+	return dbRecords, nil
 }

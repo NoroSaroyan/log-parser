@@ -121,7 +121,7 @@ func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 
 		var steps []dto.TestStepDTO
 		if json.Unmarshal([]byte(block), &steps) == nil && len(steps) > 0 {
-			//println("Accepted TestStep array block")
+			println("Accepted TestStep array block")
 			filtered = append(filtered, block)
 			continue
 		}

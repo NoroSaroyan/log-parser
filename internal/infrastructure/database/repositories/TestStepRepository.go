@@ -49,6 +49,7 @@ func (r *testStepRepository) InsertBatch(ctx context.Context, steps []*db.TestSt
 }
 
 func (r *testStepRepository) GetByTestStationRecordID(ctx context.Context, recordID int) ([]*db.TestStepDB, error) {
+
 	query := `
     SELECT test_step_name, test_threshold_value, test_measured_value, test_step_elapsed_time, test_step_result, test_step_error_code
     FROM test_step
@@ -58,7 +59,12 @@ func (r *testStepRepository) GetByTestStationRecordID(ctx context.Context, recor
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+
+		}
+	}(rows)
 
 	var results []*db.TestStepDB
 	for rows.Next() {

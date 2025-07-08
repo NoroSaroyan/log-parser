@@ -55,7 +55,9 @@ func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.Gro
 					return fmt.Errorf("failed to insert LogisticData for PCBA %s: %w", tsr.LogisticData.PCBANumber, err)
 				}
 				if logisticDataID == 0 {
+					fmt.Printf("DEBUG: LogisticDataDTO: %+v\n", tsr.LogisticData)
 					return fmt.Errorf("resolved LogisticDataID is 0 for PCBA %s", tsr.LogisticData.PCBANumber)
+
 				}
 			} else {
 				return fmt.Errorf("missing LogisticData for PCBA %s: cannot insert TestStationRecord", tsr.LogisticData.PCBANumber)

@@ -9,7 +9,7 @@ func ConvertToDB(dto dto.TestStepDTO, testStationRecordID int) db.TestStepDB {
 	return db.TestStepDB{
 		TestStepName:        dto.TestStepName,
 		TestThresholdValue:  dto.TestThresholdValue,
-		TestMeasuredValue:   dto.TestMeasuredValue,
+		TestMeasuredValue:   dto.GetMeasuredValueString(),
 		TestStepElapsedTime: dto.TestStepElapsedTime,
 		TestStepResult:      dto.TestStepResult,
 		TestStepErrorCode:   dto.TestStepErrorCode,

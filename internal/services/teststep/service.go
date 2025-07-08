@@ -26,12 +26,11 @@ func NewTestStepService(repo repositories.TestStepRepository) TestStepService {
 func (s *testStepService) InsertTestSteps(ctx context.Context, steps []dto.TestStepDTO, testStationRecordID int) error {
 	var dbModels []*db.TestStepDB
 	for _, step := range steps {
-		// trim всех текстовых полей в step
 		step.TestStepName = strings.TrimSpace(step.TestStepName)
 		step.TestStepResult = strings.TrimSpace(step.TestStepResult)
 		step.TestStepErrorCode = strings.TrimSpace(step.TestStepErrorCode)
 		step.TestThresholdValue = strings.TrimSpace(step.TestThresholdValue)
-		step.TestMeasuredValue = strings.TrimSpace(step.TestMeasuredValue)
+		step.TestMeasuredValue = strings.TrimSpace(step.GetMeasuredValueString())
 
 		converted := teststep.ConvertToDB(step, testStationRecordID)
 		dbModels = append(dbModels, &converted)

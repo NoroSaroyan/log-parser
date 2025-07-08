@@ -7,7 +7,6 @@ import (
 
 func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 	groups := map[string]*dto.GroupedDataDTO{}
-
 	for _, item := range parsed {
 		switch v := item.(type) {
 		case dto.DownloadInfoDTO:
@@ -37,11 +36,12 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 		case []dto.TestStepDTO:
 			var key string
 			for _, step := range v {
-				if step.TestStepName == "PCBA Scan" {
-					key = step.TestMeasuredValue
+				if step.TestStepName == "PCBA Scan" || step.TestStepName == "Compare PCBA Serial Number" {
+					key = step.GetMeasuredValueString()
 					break
 				}
 			}
+
 			if key == "" {
 				return nil, fmt.Errorf("TestStepDTO array missing PCBA Scan step with measured value")
 			}

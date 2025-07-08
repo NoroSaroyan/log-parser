@@ -54,28 +54,32 @@ func NewLogisticDataRepository(db *sql.DB) *logisticDataRepository {
 
 func (r *logisticDataRepository) Insert(ctx context.Context, d *db.LogisticDataDB) error {
 	query := `
-    INSERT INTO logistic_data 
-    (pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
-    supplier_hardware_version, manufacturer_hardware_version, manufacturer_software_version,
-    ble_mac, ble_sn, ble_version, ble_passwork_key, ap_app_version, ap_kernel_version,
-    tcu_iccid, phone_number, imei, imsi, production_date)
-    VALUES
-    ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
-    RETURNING id
+        INSERT INTO logistic_data 
+        (pcba_number, product_sn, part_number, vp_app_version, vp_boot_loader_version, vp_core_version,
+        supplier_hardware_version, manufacturer_hardware_version, manufacturer_software_version,
+        ble_mac, ble_sn, ble_version, ble_passwork_key, ap_app_version, ap_kernel_version,
+        tcu_iccid, phone_number, imei, imsi, production_date)
+        VALUES
+        ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+        RETURNING id
     `
 
-	err := r.db.QueryRowContext(ctx, query,
+	params := []interface{}{
 		d.PCBANumber, d.ProductSN, d.PartNumber, d.VPAppVersion, d.VPBootLoaderVersion, d.VPCoreVersion,
 		d.SupplierHardwareVersion, d.ManufacturerHardwareVersion, d.ManufacturerSoftwareVersion,
 		d.BleMac, d.BleSN, d.BleVersion, d.BlePassworkKey, d.APAppVersion, d.APKernelVersion,
 		d.TcuICCID, d.PhoneNumber, d.IMEI, d.IMSI, d.ProductionDate,
-	).Scan(&d.ID)
+	}
+
+	var id int
+	err := r.db.QueryRowContext(ctx, query, params...).Scan(&id)
 	if err != nil {
 		return fmt.Errorf("failed to insert LogisticData and retrieve ID: %w", err)
 	}
-	if d.ID == 0 {
+	if id == 0 {
 		return fmt.Errorf("unexpected: inserted LogisticData returned ID=0")
 	}
+	d.ID = id
 	return nil
 }
 
@@ -133,7 +137,6 @@ func (r *logisticDataRepository) GetByPCBANumber(ctx context.Context, pcba strin
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			// No matching record found
 			return nil, nil
 		}
 		return nil, err

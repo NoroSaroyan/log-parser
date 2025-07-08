@@ -22,8 +22,17 @@ type logisticDataService struct {
 }
 
 func (s *logisticDataService) GetOrInsertLogisticData(ctx context.Context, data dto.LogisticDataDTO) (int, error) {
-	//TODO implement me
-	panic("implement me")
+	result := logistic.ConvertToDB(data)
+	dbModel := &result
+
+	err := s.repo.Insert(ctx, dbModel)
+	if err != nil {
+		return 0, err
+	}
+	if dbModel.ID == 0 {
+		return 0, nil
+	}
+	return dbModel.ID, nil
 }
 
 func NewLogisticDataService(repo repositories.LogisticDataRepository) LogisticDataService {
