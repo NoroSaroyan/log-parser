@@ -32,21 +32,18 @@ func (h *TestStationHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get DTOs for response
 	records, err := h.testStationSvc.GetByPCBANumber(ctx, pcba)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to fetch records")
 		return
 	}
 
-	// Get DB records with IDs for fetching steps
 	dbRecords, err := h.testStationSvc.GetDbObjectsByPCBANumber(ctx, pcba)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to fetch DB records")
 		return
 	}
 
-	// Build response
 	var out []any
 	for i, rec := range records {
 		if rec.TestStation != h.stationType {
@@ -60,7 +57,6 @@ func (h *TestStationHandler) Get(w http.ResponseWriter, r *http.Request) {
 		}
 		rec.LogisticData = logDTO
 
-		// Use matching DB record ID
 		if i >= len(dbRecords) {
 			respondError(w, http.StatusInternalServerError, "record mismatch between DTOs and DBs")
 			return

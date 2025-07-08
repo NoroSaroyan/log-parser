@@ -6,17 +6,14 @@ import (
 	"net/http"
 )
 
-// DownloadHandler оборачивает сервис
 type DownloadHandler struct {
 	svc downloadinfo.DownloadInfoService
 }
 
-// NewDownloadHandler конструктор
 func NewDownloadHandler(svc downloadinfo.DownloadInfoService) *DownloadHandler {
 	return &DownloadHandler{svc: svc}
 }
 
-// Get обрабатывает GET /download?pcbanumber=
 func (h *DownloadHandler) Get(w http.ResponseWriter, r *http.Request) {
 	pcba := r.URL.Query().Get("pcbanumber")
 	if pcba == "" {

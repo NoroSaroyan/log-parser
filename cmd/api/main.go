@@ -16,7 +16,6 @@ import (
 )
 
 func main() {
-	// Use the same app initializer as CLI
 	application, err := app.InitializeApp("configs/config.yaml")
 	if err != nil {
 		log.Fatalf("Failed to initialize app: %v", err)
@@ -27,7 +26,6 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// Register API routes using services from app
 	v1.RegisterAPIV1(
 		r,
 		application.DownloadInfoService,
@@ -37,7 +35,7 @@ func main() {
 	)
 
 	server := &http.Server{
-		Addr:         ":8080", // or application.Config.Server.Address if you store it
+		Addr:         ":8080",
 		Handler:      r,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 15 * time.Second,

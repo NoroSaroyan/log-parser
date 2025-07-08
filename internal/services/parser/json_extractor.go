@@ -43,11 +43,9 @@ func ExtractJson(logs string) ([]string, error) {
 				braceCount = 0
 				bracketCount = 0
 
-				// Start writing from the opening brace/bracket
 				buffer.WriteString(strippedLine[openBraceIdx:])
 				buffer.WriteByte('\n')
 
-				// Count braces and brackets from that position
 				substr := strippedLine[openBraceIdx:]
 				braceCount += strings.Count(substr, "{")
 				braceCount -= strings.Count(substr, "}")
@@ -63,7 +61,6 @@ func ExtractJson(logs string) ([]string, error) {
 			bracketCount += strings.Count(strippedLine, "[")
 			bracketCount -= strings.Count(strippedLine, "]")
 
-			// Close block only when both counts balanced
 			if braceCount == 0 && bracketCount == 0 {
 				blocks = append(blocks, buffer.String())
 				insideBlock = false
@@ -78,7 +75,6 @@ func ExtractJson(logs string) ([]string, error) {
 	return blocks, nil
 }
 
-// FilterRelevantJsonBlocks and toJSON unchanged...
 func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 	var filtered []string
 
@@ -100,21 +96,18 @@ func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 			if err := json.Unmarshal([]byte(toJSON(fullStructure[2])), &tsr); err != nil {
 				continue
 			}
-			//println("Accepted triple structure block")
 			filtered = append(filtered, block)
 			continue
 		}
 
 		var d dto.DownloadInfoDTO
 		if json.Unmarshal([]byte(block), &d) == nil && d.TestStation != "" {
-			//println("Accepted DownloadInfo block")
 			filtered = append(filtered, block)
 			continue
 		}
 
 		var tsr dto.TestStationRecordDTO
 		if json.Unmarshal([]byte(block), &tsr) == nil && tsr.TestStation != "" {
-			//println("Accepted TestStationRecord block")
 			filtered = append(filtered, block)
 			continue
 		}
