@@ -24,6 +24,7 @@ type TestStationRecordRepository interface {
 	Insert(ctx context.Context, record *db.TestStationRecordDB) error
 	GetByPCBANumber(ctx context.Context, pcba string) ([]*db.TestStationRecordDB, error)
 	GetByPartNumber(ctx context.Context, partNumber string) ([]*db.TestStationRecordDB, error)
+	GetAllPCBANumbers(ctx context.Context) ([]string, error)
 }
 
 type TestStepRepository interface {

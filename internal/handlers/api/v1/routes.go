@@ -25,5 +25,9 @@ func RegisterAPIV1(r chi.Router,
 		pcbaH := NewTestStationHandler("PCBA", logisticSvc, testStationSvc, testStepSvc)
 		r.With(JSON...).
 			Get("/pcba", pcbaH.Get)
+
+		pcbaH = NewTestStationHandler("PCBA", logisticSvc, testStationSvc, testStepSvc) // or reuse existing one
+		r.With(JSON...).
+			Get("/pcbanumbers", pcbaH.GetPCBANumbers)
 	})
 }

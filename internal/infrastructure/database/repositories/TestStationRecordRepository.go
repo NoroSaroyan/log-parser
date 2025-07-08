@@ -70,3 +70,30 @@ func (r *testStationRecordRepository) GetByPCBANumber(ctx context.Context, pcba 
 	}
 	return results, nil
 }
+func (r *testStationRecordRepository) GetAllPCBANumbers(ctx context.Context) ([]string, error) {
+	query := `
+		SELECT DISTINCT l.pcba_number
+		FROM test_station_record tsr
+		JOIN logistic_data l ON tsr.logistic_data_id = l.id
+	`
+
+	rows, err := r.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query PCBA numbers: %w", err)
+	}
+	defer rows.Close()
+
+	var pcbas []string
+	for rows.Next() {
+		var pcba string
+		if err := rows.Scan(&pcba); err != nil {
+			return nil, fmt.Errorf("failed to scan PCBA number: %w", err)
+		}
+		pcbas = append(pcbas, pcba)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("row iteration error: %w", err)
+	}
+
+	return pcbas, nil
+}

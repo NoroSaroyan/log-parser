@@ -87,3 +87,18 @@ func (h *TestStationHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	respondJSON(w, http.StatusOK, out)
 }
+func (h *TestStationHandler) GetPCBANumbers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	pcbaNumbers, err := h.testStationSvc.GetAllPCBANumbers(ctx, h.stationType)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to fetch PCBA numbers")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, struct {
+		PCBANumbers []string `json:"PCBANumbers"`
+	}{
+		PCBANumbers: pcbaNumbers,
+	})
+}

@@ -14,6 +14,7 @@ type TestStationService interface {
 	InsertTestStationRecord(ctx context.Context, data dto.TestStationRecordDTO, logisticDataID int) (int, error)
 	GetByPCBANumber(ctx context.Context, pcbaNumber string) ([]dto.TestStationRecordDTO, error)
 	GetDbObjectsByPCBANumber(ctx context.Context, pcbaNumber string) ([]*db.TestStationRecordDB, error)
+	GetAllPCBANumbers(ctx context.Context, stationType string) ([]string, error)
 }
 
 type testStationService struct {
@@ -77,4 +78,8 @@ func (s *testStationService) GetDbObjectsByPCBANumber(ctx context.Context, pcbaN
 	}
 
 	return dbRecords, nil
+}
+
+func (s *testStationService) GetAllPCBANumbers(ctx context.Context, stationType string) ([]string, error) {
+	return s.repo.GetAllPCBANumbers(ctx)
 }
