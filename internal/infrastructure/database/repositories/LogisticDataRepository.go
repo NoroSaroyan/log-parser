@@ -173,7 +173,6 @@ func (r *logisticDataRepository) GetById(ctx context.Context, id int) (*db.Logis
 		FROM logistic_data 
 		WHERE id = $1
 	`
-
 	row := r.db.QueryRowContext(ctx, query, id)
 
 	var d db.LogisticDataDB

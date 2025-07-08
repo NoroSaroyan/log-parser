@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -11,6 +12,7 @@ import (
 func NewPostgresDB(cfg *config.DatabaseConfig) (*sql.DB, error) {
 	db, err := sql.Open("postgres", cfg.DSN())
 	if err != nil {
+		fmt.Printf("Config: %v", cfg.DSN())
 		return nil, err
 	}
 

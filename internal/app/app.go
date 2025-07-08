@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"log"
 	"log-parser/internal/config"
 	"log-parser/internal/infrastructure/database"
@@ -26,8 +27,10 @@ func InitializeApp(configPath string) (*App, error) {
 	}
 
 	db, err := database.NewPostgresDB(&cfg.Database)
+
 	if err != nil {
-		log.Println("Failed to connect to database", err)
+		log.Printf("Failed to connect to database: %w", err)
+		fmt.Printf("Config: %v", cfg.Database)
 		return nil, err
 	}
 	log.Println("Connected to Postgres database")

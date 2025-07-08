@@ -16,7 +16,11 @@ import (
 )
 
 func main() {
-	application, err := app.InitializeApp("configs/config.yaml")
+	file := os.Getenv("CONFIG_FILE")
+	if len(file) == 0 {
+		file = "configs/config.yaml"
+	}
+	application, err := app.InitializeApp(file)
 	if err != nil {
 		log.Fatalf("Failed to initialize app: %v", err)
 	}

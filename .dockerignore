@@ -1,0 +1,5 @@
+./corporate_resources
+./.github
+.env
+
+./create_tables_schema.sql

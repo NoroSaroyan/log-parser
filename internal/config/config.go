@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	_ "github.com/lib/pq"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -37,6 +38,7 @@ func LoadConfig(path string) (*Config, error) {
 	if err := decoder.Decode(cfg); err != nil {
 		return nil, err
 	}
+	fmt.Printf("database config: %v", cfg)
 	return cfg, nil
 }
 
