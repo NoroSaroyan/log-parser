@@ -1,5 +1,8 @@
 package dto
 
+// LogisticDataDTO holds logistic info for a PCBA
+//
+// swagger:model
 type LogisticDataDTO struct {
 	PCBANumber                  string `json:"PCBANumber"`
 	ProductSN                   string `json:"ProductSN"`

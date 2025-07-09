@@ -14,6 +14,18 @@ func NewDownloadHandler(svc downloadinfo.DownloadInfoService) *DownloadHandler {
 	return &DownloadHandler{svc: svc}
 }
 
+// Get godoc
+// @Summary      Get DownloadInfo by PCBANumber
+// @Description  Returns the DownloadInfo for the specified PCBANumber
+// @Tags         download
+// @Accept       json
+// @Produce      json
+// @Param        pcbanumber  query     string  true  "PCBA Number"
+// @Success      200  {object}  dto.DownloadInfoDTO
+// @Failure      400  {object}  map[string]string  "pcbanumber is required"
+// @Failure      404  {object}  map[string]string  "not found"
+// @Failure      500  {object}  map[string]string  "internal error"
+// @Router       /download [get]
 func (h *DownloadHandler) Get(w http.ResponseWriter, r *http.Request) {
 	pcba := r.URL.Query().Get("pcbanumber")
 	if pcba == "" {

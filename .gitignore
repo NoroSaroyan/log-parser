@@ -51,5 +51,7 @@ dist/
 #Corporate logs
 corporate_resources
 
+/cmd/api/docs
 
+restore.md
 

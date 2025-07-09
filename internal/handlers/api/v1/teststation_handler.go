@@ -23,6 +23,17 @@ func NewTestStationHandler(stationType string,
 	return &TestStationHandler{stationType, logisticSvc, testStationSvc, testStepSvc}
 }
 
+// Get godoc
+// @Summary      Get TestStation records by PCBANumber
+// @Description  Returns TestStation records and their related logistic and test step data for a specified PCBANumber
+// @Tags         teststation
+// @Accept       json
+// @Produce      json
+// @Param        pcbanumber  query     string  true  "PCBA Number"
+// @Success      200  {array}  dto.TestStationWithSteps
+// @Failure      400  {object}  map[string]string  "pcbanumber is required"
+// @Failure      404  {object}  map[string]string  "no matching records"
+// @Failure      500  {object}  map[string]string  "internal server error"
 func (h *TestStationHandler) Get(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -83,6 +94,46 @@ func (h *TestStationHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	respondJSON(w, http.StatusOK, out)
 }
+
+// GetFinal godoc
+// @Summary      Get Final TestStation records by PCBANumber
+// @Tags         teststation
+// @Produce      json
+// @Param        pcbanumber  query     string  true  "PCBA Number"
+// @Success      200  {array}  dto.TestStationWithSteps
+// @Failure      400  {object}  map[string]string  "pcbanumber is required"
+// @Failure      404  {object}  map[string]string  "no matching records"
+// @Failure      500  {object}  map[string]string  "internal server error"
+// @Router       /final [get]
+func (h *TestStationHandler) GetFinal(w http.ResponseWriter, r *http.Request) {
+	h.stationType = "Final"
+	h.Get(w, r)
+}
+
+// GetPCBA godoc
+// @Summary      Get PCBA TestStation records by PCBANumber
+// @Tags         teststation
+// @Produce      json
+// @Param        pcbanumber  query     string  true  "PCBA Number"
+// @Success      200  {array}  dto.TestStationWithSteps
+// @Failure      400  {object}  map[string]string  "pcbanumber is required"
+// @Failure      404  {object}  map[string]string  "no matching records"
+// @Failure      500  {object}  map[string]string  "internal server error"
+// @Router       /pcba [get]
+func (h *TestStationHandler) GetPCBA(w http.ResponseWriter, r *http.Request) {
+	h.stationType = "PCBA"
+	h.Get(w, r)
+}
+
+// GetPCBANumbers godoc
+// @Summary      Get all PCBANumbers for a TestStation type
+// @Description  Returns all PCBANumbers available for the configured TestStation type
+// @Tags         teststation
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  dto.PCBANumbersResponse
+// @Failure      500  {object}  map[string]string  "failed to fetch PCBA numbers"
+// @Router       /pcbanumbers [get]
 func (h *TestStationHandler) GetPCBANumbers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 

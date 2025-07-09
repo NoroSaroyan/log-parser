@@ -1,5 +1,8 @@
 package dto
 
+// DownloadInfoDTO represents download info details
+//
+// swagger:model
 type DownloadInfoDTO struct {
 	TestStation          string `json:"TestStation"`
 	FlashEntityType      string `json:"FlashEntityType"`

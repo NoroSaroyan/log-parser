@@ -10,11 +10,20 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 
+	httpSwagger "github.com/swaggo/http-swagger"
 	"log-parser/internal/app"
 	v1 "log-parser/internal/handlers/api/v1"
+
+	_ "log-parser/cmd/api/docs"
 )
 
+// @title Log Parser API
+// @version 1.0
+// @description API for log parsing service
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	file := os.Getenv("CONFIG_FILE")
 	if len(file) == 0 {
@@ -27,16 +36,29 @@ func main() {
 	defer application.CloseDB()
 
 	r := chi.NewRouter()
+
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowCredentials: false,
+		MaxAge:           300,
+	})
+	r.Use(corsMiddleware.Handler)
+
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	v1.RegisterAPIV1(
-		r,
-		application.DownloadInfoService,
-		application.LogisticService,
-		application.TestStationService,
-		application.TestStepService,
-	)
+	r.Route("/api/v1", func(r chi.Router) {
+		v1.RegisterAPIV1(r,
+			application.DownloadInfoService,
+			application.LogisticService,
+			application.TestStationService,
+			application.TestStepService,
+		)
+	})
+
+	r.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	server := &http.Server{
 		Addr:         ":8080",

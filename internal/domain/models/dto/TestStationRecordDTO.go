@@ -1,5 +1,8 @@
 package dto
 
+// TestStationRecordDTO represents test station record info
+//
+// swagger:model
 type TestStationRecordDTO struct {
 	PartNumber       string          `json:"PartNumber"`
 	TestStation      string          `json:"TestStation"`

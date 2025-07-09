@@ -2,6 +2,9 @@ package dto
 
 import "fmt"
 
+// TestStepDTO represents a test step result
+//
+// swagger:model
 type TestStepDTO struct {
 	TestStepName        string      `json:"TestStepName"`
 	TestThresholdValue  string      `json:"TestThresholdValue"`

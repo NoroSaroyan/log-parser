@@ -42,13 +42,9 @@ security:
 
 cors:
   allowed_origins:
-    - "https://example.com"
-    - "https://app.example.com"
-    - "https://localhost:3000"
+    - "http://localhost:63342"
   allowed_methods:
-    - GET
-    - OPTIONS
+    - "*"
   allowed_headers:
-    - Authorization
-    - Content-Type
+    - "*"
   allow_credentials: true
