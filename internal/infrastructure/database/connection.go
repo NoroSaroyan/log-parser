@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/NoroSaroyan/log-parser/internal/config"
 	_ "github.com/lib/pq" // PostgreSQL driver
-	"log-parser/internal/config"
 )
 
 // NewPostgresDB initializes and returns a PostgreSQL database connection

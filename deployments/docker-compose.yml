@@ -45,17 +45,17 @@ services:
       - postgres
     networks:
       - log-parser
-
   godoc:
-    image: golang:1.21
+    image: golang:1.24
     container_name: godoc
-    command: godoc -http=:6060 -index -play -analysis=type
-    working_dir: /go/src/project
+    command: sh -c "go install golang.org/x/tools/cmd/godoc@latest && /go/bin/godoc -http=:6060 -index"
+    working_dir: /go/src/github.com/NoroSaroyan/log-parser
     volumes:
-      - ./:/go/src/project
+      - ./:/go/src/github.com/NoroSaroyan/log-parser
     ports:
       - "6060:6060"
     restart: unless-stopped
-
+    networks:
+      - log-parser
 volumes:
   postgres_data:

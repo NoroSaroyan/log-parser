@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/NoroSaroyan/log-parser/internal/handlers/cli"
 	"log"
-	"log-parser/internal/handlers/cli"
 )
 
 func main() {

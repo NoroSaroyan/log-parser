@@ -15,10 +15,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/domain/repositories"
+	"github.com/NoroSaroyan/log-parser/internal/services/converter/download"
 	"log"
-	"log-parser/internal/domain/models/dto"
-	"log-parser/internal/domain/repositories"
-	"log-parser/internal/services/converter/download"
 	"strings"
 )
 

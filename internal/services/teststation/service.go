@@ -45,10 +45,10 @@ package teststation
 import (
 	"context"
 	"fmt"
-	"log-parser/internal/domain/models/db"
-	"log-parser/internal/domain/models/dto"
-	"log-parser/internal/domain/repositories"
-	"log-parser/internal/services/converter/teststation"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/db"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/domain/repositories"
+	"github.com/NoroSaroyan/log-parser/internal/services/converter/teststation"
 	"strings"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log-parser/internal/domain/models/db"
-	"log-parser/internal/domain/repositories"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/db"
+	"github.com/NoroSaroyan/log-parser/internal/domain/repositories"
 )
 
 // logisticDataRepository provides methods to perform CRUD operations

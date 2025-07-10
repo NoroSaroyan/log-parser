@@ -13,10 +13,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"log-parser/internal/app"
-	"log-parser/internal/services/dispatcher"
-	"log-parser/internal/services/parser"
-	"log-parser/internal/services/processor"
+	"github.com/NoroSaroyan/log-parser/internal/app"
+	"github.com/NoroSaroyan/log-parser/internal/services/dispatcher"
+	"github.com/NoroSaroyan/log-parser/internal/services/parser"
+	"github.com/NoroSaroyan/log-parser/internal/services/processor"
 )
 
 func Run() error {

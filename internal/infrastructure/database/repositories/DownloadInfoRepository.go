@@ -3,9 +3,9 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/db"
+	"github.com/NoroSaroyan/log-parser/internal/domain/repositories"
 	"log"
-	"log-parser/internal/domain/models/db"
-	"log-parser/internal/domain/repositories"
 )
 
 // DownloadInfoRepository provides methods for persisting and retrieving

@@ -1,11 +1,11 @@
 package v1
 
 import (
+	"github.com/NoroSaroyan/log-parser/internal/services/downloadinfo"
+	"github.com/NoroSaroyan/log-parser/internal/services/logistic"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststation"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststep"
 	"github.com/go-chi/chi/v5"
-	"log-parser/internal/services/downloadinfo"
-	"log-parser/internal/services/logistic"
-	"log-parser/internal/services/teststation"
-	"log-parser/internal/services/teststep"
 )
 
 // RegisterAPIV1 registers all v1 API routes.

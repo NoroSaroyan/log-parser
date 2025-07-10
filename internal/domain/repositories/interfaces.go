@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"context"
-	"log-parser/internal/domain/models/db"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/db"
 )
 
 type DownloadInfoRepository interface {

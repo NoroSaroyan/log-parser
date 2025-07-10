@@ -3,11 +3,11 @@ package dispatcher
 import (
 	"context"
 	"fmt"
-	"log-parser/internal/domain/models/dto"
-	"log-parser/internal/services/downloadinfo"
-	"log-parser/internal/services/logistic"
-	"log-parser/internal/services/teststation"
-	"log-parser/internal/services/teststep"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/services/downloadinfo"
+	"github.com/NoroSaroyan/log-parser/internal/services/logistic"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststation"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststep"
 )
 
 // DispatcherService defines the interface for dispatching grouped data DTOs

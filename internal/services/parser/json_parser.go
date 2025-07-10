@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
 )
 
 // ParseMixedJSONArray parses a raw JSON byte array representing a mixed-type JSON array.

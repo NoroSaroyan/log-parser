@@ -42,7 +42,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"log-parser/internal/domain/models/db"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/db"
 )
 
 // testStepRepository provides methods to interact with TestStepDB records in the database.

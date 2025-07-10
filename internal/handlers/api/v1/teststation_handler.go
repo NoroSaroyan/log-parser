@@ -1,10 +1,10 @@
 package v1
 
 import (
-	"log-parser/internal/domain/models/dto"
-	"log-parser/internal/services/logistic"
-	"log-parser/internal/services/teststation"
-	"log-parser/internal/services/teststep"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/services/logistic"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststation"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststep"
 	"net/http"
 )
 

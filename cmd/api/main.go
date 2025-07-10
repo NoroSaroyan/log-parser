@@ -12,11 +12,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
+	"github.com/NoroSaroyan/log-parser/internal/app"
+	v1 "github.com/NoroSaroyan/log-parser/internal/handlers/api/v1"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"log-parser/internal/app"
-	v1 "log-parser/internal/handlers/api/v1"
 
-	_ "log-parser/cmd/api/docs"
+	_ "github.com/NoroSaroyan/log-parser/cmd/api/docs"
 )
 
 // @title Log Parser API

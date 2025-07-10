@@ -2,14 +2,14 @@ package app
 
 import (
 	"fmt"
+	"github.com/NoroSaroyan/log-parser/internal/config"
+	"github.com/NoroSaroyan/log-parser/internal/infrastructure/database"
+	"github.com/NoroSaroyan/log-parser/internal/infrastructure/database/repositories"
+	"github.com/NoroSaroyan/log-parser/internal/services/downloadinfo"
+	"github.com/NoroSaroyan/log-parser/internal/services/logistic"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststation"
+	"github.com/NoroSaroyan/log-parser/internal/services/teststep"
 	"log"
-	"log-parser/internal/config"
-	"log-parser/internal/infrastructure/database"
-	"log-parser/internal/infrastructure/database/repositories"
-	"log-parser/internal/services/downloadinfo"
-	"log-parser/internal/services/logistic"
-	"log-parser/internal/services/teststation"
-	"log-parser/internal/services/teststep"
 )
 
 type App struct {

@@ -23,7 +23,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
 	"strings"
 )
 

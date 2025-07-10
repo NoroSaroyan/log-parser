@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log-parser/internal/domain/models/db"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/db"
 )
 
 // testStationRecordRepository provides methods for accessing and manipulating

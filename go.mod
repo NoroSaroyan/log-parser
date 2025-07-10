@@ -1,4 +1,4 @@
-module log-parser
+module github.com/NoroSaroyan/log-parser
 
 go 1.24.4
 

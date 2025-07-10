@@ -1,8 +1,8 @@
 package v1
 
 import (
+	"github.com/NoroSaroyan/log-parser/internal/services/downloadinfo"
 	"log"
-	"log-parser/internal/services/downloadinfo"
 	"net/http"
 )
 

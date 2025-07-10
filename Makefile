@@ -33,3 +33,5 @@ exec-postgres:
 	@docker exec -it my_postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 exec-godoc:
 	@docker exec -it godoc sh
+godoc:
+	@docker compose -f deployments/docker-compose.yml --project-directory . up -d godoc

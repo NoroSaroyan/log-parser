@@ -42,7 +42,7 @@ package processor
 
 import (
 	"fmt"
-	"log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
 )
 
 func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {

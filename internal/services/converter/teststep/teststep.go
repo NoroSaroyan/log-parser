@@ -1,8 +1,8 @@
 package teststep
 
 import (
-	"log-parser/internal/domain/models/db"
-	"log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/db"
+	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
 )
 
 func ConvertToDB(dto dto.TestStepDTO, testStationRecordID int) db.TestStepDB {
