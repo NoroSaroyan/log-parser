@@ -1,3 +1,14 @@
+help:
+	@echo "Makefile commands:"
+	@echo "  up           - Start all containers"
+	@echo "  down         - Stop all containers"
+	@echo "  restart      - Restart all containers"
+	@echo "  docker-build - Build Docker images"
+	@echo "  logs         - Follow logs"
+	@echo "  ps           - Show running containers"
+	@echo "  exec-app     - Exec shell into app container"
+	@echo "  exec-postgres- Exec psql inside postgres container"
+	@echo "  exec-godoc   - Exec shell into godoc container"
 up:
 	@docker compose -f deployments/docker-compose.yml --project-directory . up -d
 
@@ -20,3 +31,5 @@ exec-app:
 
 exec-postgres:
 	@docker exec -it my_postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
+exec-godoc:
+	@docker exec -it godoc sh

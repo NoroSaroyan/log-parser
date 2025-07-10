@@ -29,7 +29,6 @@ services:
     restart: always
     depends_on:
       - postgres
-
     environment:
       CONFIG_FILE: /app_config.yaml
       POSTGRES_HOST: postgres
@@ -46,6 +45,17 @@ services:
       - postgres
     networks:
       - log-parser
+
+  godoc:
+    image: golang:1.21
+    container_name: godoc
+    command: godoc -http=:6060 -index -play -analysis=type
+    working_dir: /go/src/project
+    volumes:
+      - ./:/go/src/project
+    ports:
+      - "6060:6060"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
-

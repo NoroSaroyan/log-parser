@@ -1,3 +1,35 @@
+/*
+Package teststep provides a service layer responsible for managing TestStep data,
+which represents individual test steps performed within a test station record context.
+
+The TestStepService interface defines key business operations:
+- Inserting multiple test steps linked to a specific TestStationRecord,
+- Retrieving all test steps associated with a given TestStationRecordID.
+
+Implementation notes:
+  - The service sanitizes string fields of each test step DTO before processing,
+    ensuring consistent and clean data input.
+  - Conversion between DTO and DB models is handled by the dedicated converter package.
+  - Batch insertion is performed via the repository to optimize database operations.
+  - Retrieval operations convert DB models back into DTOs for external use.
+
+Methods:
+
+InsertTestSteps:
+- Accepts a slice of TestStepDTOs and the parent TestStationRecordID.
+- Trims whitespace from all relevant string fields including nested measured values.
+- Converts each DTO to its DB representation and aggregates them.
+- Delegates batch insertion to the repository.
+- Returns a wrapped error if insertion fails.
+
+GetByTestStationRecordID:
+- Fetches all TestStep records linked to a specific TestStationRecordID.
+- Converts retrieved DB models to DTOs before returning.
+- Returns an error if retrieval fails.
+
+This package encapsulates the business logic for handling detailed test step data,
+with a clear separation between domain models, service logic, and persistence layers.
+*/
 package teststep
 
 import (

@@ -8,6 +8,11 @@ import (
 	"net/http"
 )
 
+// TestStationHandler provides HTTP handlers for managing TestStation records.
+//
+// It supports operations to retrieve TestStation records, related logistic data,
+// and test steps for a specific PCBA number. The handler depends on injected
+// services for business logic and database access.
 type TestStationHandler struct {
 	stationType    string
 	logisticSvc    logistic.LogisticDataService
@@ -15,6 +20,10 @@ type TestStationHandler struct {
 	testStepSvc    teststep.TestStepService
 }
 
+// NewTestStationHandler creates a new TestStationHandler with the given services.
+//
+// The `stationType` argument determines which type of TestStation records
+// (e.g., "PCBA", "Final") this handler operates on.
 func NewTestStationHandler(stationType string,
 	logisticSvc logistic.LogisticDataService,
 	testStationSvc teststation.TestStationService,
@@ -23,7 +32,15 @@ func NewTestStationHandler(stationType string,
 	return &TestStationHandler{stationType, logisticSvc, testStationSvc, testStepSvc}
 }
 
-// Get godoc
+// Get handles HTTP GET requests to retrieve TestStation records by PCBA number.
+//
+// It fetches TestStation records, associated logistic data, and related test steps
+// for the specified "pcbanumber" query parameter. The response is a JSON array of
+// TestStationWithSteps objects. Returns HTTP 400 if the parameter is missing,
+// 404 if no matching records are found, and 500 for server errors.
+//
+// Swagger annotations:
+//
 // @Summary      Get TestStation records by PCBANumber
 // @Description  Returns TestStation records and their related logistic and test step data for a specified PCBANumber
 // @Tags         teststation
@@ -95,37 +112,29 @@ func (h *TestStationHandler) Get(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, out)
 }
 
-// GetFinal godoc
-// @Summary      Get Final TestStation records by PCBANumber
-// @Tags         teststation
-// @Produce      json
-// @Param        pcbanumber  query     string  true  "PCBA Number"
-// @Success      200  {array}  dto.TestStationWithSteps
-// @Failure      400  {object}  map[string]string  "pcbanumber is required"
-// @Failure      404  {object}  map[string]string  "no matching records"
-// @Failure      500  {object}  map[string]string  "internal server error"
-// @Router       /final [get]
+// GetFinal is a shortcut handler for fetching "Final" TestStation records.
+//
+// It sets the station type to "Final" and delegates to Get().
 func (h *TestStationHandler) GetFinal(w http.ResponseWriter, r *http.Request) {
 	h.stationType = "Final"
 	h.Get(w, r)
 }
 
-// GetPCBA godoc
-// @Summary      Get PCBA TestStation records by PCBANumber
-// @Tags         teststation
-// @Produce      json
-// @Param        pcbanumber  query     string  true  "PCBA Number"
-// @Success      200  {array}  dto.TestStationWithSteps
-// @Failure      400  {object}  map[string]string  "pcbanumber is required"
-// @Failure      404  {object}  map[string]string  "no matching records"
-// @Failure      500  {object}  map[string]string  "internal server error"
-// @Router       /pcba [get]
+// GetPCBA is a shortcut handler for fetching "PCBA" TestStation records.
+//
+// It sets the station type to "PCBA" and delegates to Get().
 func (h *TestStationHandler) GetPCBA(w http.ResponseWriter, r *http.Request) {
 	h.stationType = "PCBA"
 	h.Get(w, r)
 }
 
-// GetPCBANumbers godoc
+// GetPCBANumbers handles HTTP GET requests to retrieve all PCBA numbers
+// for the configured TestStation type.
+//
+// The response is a JSON object with a "PCBANumbers" array.
+//
+// Swagger annotations:
+//
 // @Summary      Get all PCBANumbers for a TestStation type
 // @Description  Returns all PCBANumbers available for the configured TestStation type
 // @Tags         teststation

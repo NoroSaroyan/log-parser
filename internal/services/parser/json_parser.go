@@ -1,3 +1,19 @@
+/*
+Package parser contains utilities to parse and extract structured domain data
+from mixed JSON arrays typically found in raw log files.
+
+The core challenge addressed here is that JSON arrays may contain heterogeneous
+elements of varying types, representing different domain concepts (e.g., test steps,
+test station records, download info). This package helps parse such mixed content
+and segregate it into meaningful domain DTOs.
+
+Function:
+
+  - ParseMixedJSONArray: Accepts raw JSON byte data representing an array of mixed
+    elements. Each element may be an object or an array, corresponding to one of the
+    domain DTO types. The function unmarshals each element based on its structure and
+    domain-specific logic, returning a slice of parsed domain objects.
+*/
 package parser
 
 import (
@@ -7,6 +23,30 @@ import (
 	"log-parser/internal/domain/models/dto"
 )
 
+// ParseMixedJSONArray parses a raw JSON byte array representing a mixed-type JSON array.
+//
+// The input JSON is expected to be a top-level array containing elements of differing types:
+// - Arrays of TestStepDTO objects (representing test steps)
+// - Objects representing TestStationRecordDTO or DownloadInfoDTO
+//
+// Parsing logic:
+//   - Iterates each element, inspects the first non-whitespace byte to distinguish arrays vs objects.
+//   - For arrays ('['), attempts to parse as []TestStepDTO, then checks for a PCBA identifier
+//     in the steps to filter only test steps corresponding to a known "Final" TestStation record.
+//   - For objects ('{'), parses into a generic map first to check the 'TestStation' field:
+//   - If 'TestStation' is "PCBA" or "Final", attempts to parse as TestStationRecordDTO.
+//   - "Final" TestStationRecords are indexed by their PCBANumber to correlate with test steps.
+//   - If 'TestStation' is "Download", parses as DownloadInfoDTO.
+//   - Ignores or logs any elements with unexpected structures or missing fields.
+//
+// Returns a slice of interface{} containing parsed domain DTOs (TestStationRecordDTO,
+// DownloadInfoDTO, []TestStepDTO) filtered and grouped according to domain rules.
+//
+// Errors during unmarshaling individual elements are logged and do not halt parsing of
+// the entire array.
+//
+// This function enables the application to reliably parse complex mixed JSON arrays from logs,
+// correctly associating test steps with their corresponding test stations.
 func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 	var rawItems []json.RawMessage
 	if err := json.Unmarshal(data, &rawItems); err != nil {
@@ -104,6 +144,10 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 	return results, nil
 }
 
+// trimSpaces returns a subslice of raw JSON bytes with leading whitespace characters removed.
+//
+// Used internally to identify the first meaningful byte token in a JSON element,
+// helping determine its type (array or object).
 func trimSpaces(raw json.RawMessage) []byte {
 	for i, b := range raw {
 		if b != ' ' && b != '\n' && b != '\t' && b != '\r' {

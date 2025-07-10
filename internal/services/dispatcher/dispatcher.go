@@ -10,7 +10,25 @@ import (
 	"log-parser/internal/services/teststep"
 )
 
+// DispatcherService defines the interface for dispatching grouped data DTOs
+// to the respective services that insert or update data in the database.
 type DispatcherService interface {
+	// DispatchGroups processes multiple GroupedDataDTO objects sequentially.
+	//
+	// For each group:
+	//   1. Inserts DownloadInfo if present.
+	//   2. Inserts LogisticData for each TestStationRecord, ensuring a valid LogisticDataID.
+	//   3. Inserts each TestStationRecord linked to the corresponding LogisticDataID.
+	//   4. Inserts TestSteps linked to their corresponding TestStationRecord.
+	//
+	// If any insertion fails, the error is returned immediately and processing stops.
+	//
+	// Parameters:
+	//   - ctx: context for cancellation and timeout propagation.
+	//   - groups: slice of grouped data DTOs, each containing DownloadInfo, TestStationRecords, and TestSteps.
+	//
+	// Returns:
+	//   - error if any insertion operation fails or data mismatches occur.
 	DispatchGroups(ctx context.Context, groups []dto.GroupedDataDTO) error
 }
 
@@ -21,6 +39,7 @@ type dispatcherService struct {
 	testStepService     teststep.TestStepService
 }
 
+// NewDispatcherService creates a new DispatcherService implementation with the required dependencies.
 func NewDispatcherService(
 	downloadInfoSvc downloadinfo.DownloadInfoService,
 	logisticSvc logistic.LogisticDataService,
@@ -35,6 +54,9 @@ func NewDispatcherService(
 	}
 }
 
+// DispatchGroups implements DispatcherService.DispatchGroups.
+//
+// See interface documentation for full details.
 func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.GroupedDataDTO) error {
 	for _, group := range groups {
 		if (group.DownloadInfo != dto.DownloadInfoDTO{}) {
@@ -57,7 +79,6 @@ func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.Gro
 				if logisticDataID == 0 {
 					fmt.Printf("DEBUG: LogisticDataDTO: %+v\n", tsr.LogisticData)
 					return fmt.Errorf("resolved LogisticDataID is 0 for PCBA %s", tsr.LogisticData.PCBANumber)
-
 				}
 			} else {
 				return fmt.Errorf("missing LogisticData for PCBA %s: cannot insert TestStationRecord", tsr.LogisticData.PCBANumber)
