@@ -13,6 +13,7 @@ accessible via a REST API.
 - **Docker & Docker Compose** — containerization and orchestration for easy deployment
 - **Raw SQL** — direct database interaction without ORM
 - **REST API** — data exposure for querying parsed log information
+- **GoDoc** - documentation for the project
 
 ## Architecture & Structure
 
