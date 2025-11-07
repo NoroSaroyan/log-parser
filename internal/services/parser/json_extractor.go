@@ -19,8 +19,6 @@ Functions:
 package parser
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
@@ -41,66 +39,75 @@ import (
 // If the input contains no JSON blocks or malformed blocks that can't be balanced, those are ignored.
 // The function returns an error only if the input scanning encounters an I/O error.
 func ExtractJson(logs string) ([]string, error) {
-	scanner := bufio.NewScanner(strings.NewReader(logs))
-
+	lines := strings.Split(logs, "\n")
 	var blocks []string
-	var buffer bytes.Buffer
+	var currentBlock strings.Builder
 	var insideBlock bool
 	var braceCount int
-	var bracketCount int
 
-	const prefixMarker = "]:"
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		prefixEnd := strings.Index(line, prefixMarker)
-		if prefixEnd != -1 {
-			prefixEnd += len(prefixMarker)
-		} else {
-			prefixEnd = 0
-		}
-
-		strippedLine := ""
-		if len(line) > prefixEnd {
-			strippedLine = line[prefixEnd:]
-		}
-
-		if !insideBlock {
-			openBraceIdx := strings.IndexAny(strippedLine, "{[")
-			if openBraceIdx != -1 {
-				insideBlock = true
-				buffer.Reset()
-				braceCount = 0
-				bracketCount = 0
-
-				buffer.WriteString(strippedLine[openBraceIdx:])
-				buffer.WriteByte('\n')
-
-				substr := strippedLine[openBraceIdx:]
-				braceCount += strings.Count(substr, "{")
-				braceCount -= strings.Count(substr, "}")
-				bracketCount += strings.Count(substr, "[")
-				bracketCount -= strings.Count(substr, "]")
+	for _, line := range lines {
+		if strings.Contains(line, " Data  {") {
+			// Start of a new Data block
+			if insideBlock {
+				// Previous block wasn't properly closed, save it anyway
+				blocks = append(blocks, currentBlock.String())
 			}
-		} else {
-			buffer.WriteString(strippedLine)
-			buffer.WriteByte('\n')
 
-			braceCount += strings.Count(strippedLine, "{")
-			braceCount -= strings.Count(strippedLine, "}")
-			bracketCount += strings.Count(strippedLine, "[")
-			bracketCount -= strings.Count(strippedLine, "]")
+			insideBlock = true
+			currentBlock.Reset()
+			braceCount = 0
 
-			if braceCount == 0 && bracketCount == 0 {
-				blocks = append(blocks, buffer.String())
+			// Extract everything after " Data  "
+			dataIdx := strings.Index(line, " Data  ")
+			if dataIdx != -1 {
+				jsonPart := line[dataIdx+7:] // 7 = len(" Data  ")
+				currentBlock.WriteString(jsonPart)
+				currentBlock.WriteByte('\n')
+				braceCount += strings.Count(jsonPart, "{") - strings.Count(jsonPart, "}")
+			}
+		} else if strings.Contains(line, " Data  [") {
+			// Start of a new Data array block
+			if insideBlock {
+				// Previous block wasn't properly closed, save it anyway
+				blocks = append(blocks, currentBlock.String())
+			}
+
+			insideBlock = true
+			currentBlock.Reset()
+			braceCount = 0
+
+			// Extract everything after " Data  "
+			dataIdx := strings.Index(line, " Data  ")
+			if dataIdx != -1 {
+				jsonPart := line[dataIdx+7:] // 7 = len(" Data  ")
+				currentBlock.WriteString(jsonPart)
+				currentBlock.WriteByte('\n')
+				braceCount += strings.Count(jsonPart, "[") - strings.Count(jsonPart, "]")
+			}
+		} else if insideBlock {
+			// Continue building the current block
+			// Extract JSON content after the log prefix
+			prefixEnd := strings.Index(line, "]:")
+			if prefixEnd != -1 && len(line) > prefixEnd+2 {
+				jsonPart := line[prefixEnd+2:]
+				currentBlock.WriteString(jsonPart)
+				currentBlock.WriteByte('\n')
+				braceCount += strings.Count(jsonPart, "{") - strings.Count(jsonPart, "}")
+				braceCount += strings.Count(jsonPart, "[") - strings.Count(jsonPart, "]")
+			}
+
+			// Check if block is complete
+			if braceCount <= 0 && currentBlock.Len() > 10 {
+				blocks = append(blocks, currentBlock.String())
 				insideBlock = false
+				currentBlock.Reset()
 			}
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
+	// Handle case where file ends while inside a block
+	if insideBlock && currentBlock.Len() > 10 {
+		blocks = append(blocks, currentBlock.String())
 	}
 
 	return blocks, nil
@@ -162,7 +169,7 @@ func FilterRelevantJsonBlocks(blocks []string) ([]string, error) {
 
 		var steps []dto.TestStepDTO
 		if json.Unmarshal([]byte(block), &steps) == nil && len(steps) > 0 {
-			println("Accepted TestStep array block")
+			//println("Accepted TestStep array block")
 			filtered = append(filtered, block)
 			continue
 		}

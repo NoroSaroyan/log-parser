@@ -42,6 +42,7 @@ package processor
 
 import (
 	"fmt"
+	"strings"
 	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
 )
 
@@ -50,9 +51,11 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 	for _, item := range parsed {
 		switch v := item.(type) {
 		case dto.DownloadInfoDTO:
-			key := v.TcuPCBANumber
+			key := strings.TrimSpace(v.TcuPCBANumber)
 			if key == "" {
-				return nil, fmt.Errorf("DownloadInfoDTO missing TcuPCBANumber")
+				// Skip DownloadInfo records with empty TcuPCBANumber - they are optional
+				fmt.Printf("Skipping DownloadInfo with empty TcuPCBANumber\n")
+				continue
 			}
 			group, ok := groups[key]
 			if !ok {
@@ -62,7 +65,7 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 			group.DownloadInfo = v
 
 		case dto.TestStationRecordDTO:
-			key := v.LogisticData.PCBANumber
+			key := strings.TrimSpace(v.LogisticData.PCBANumber)
 			if key == "" {
 				return nil, fmt.Errorf("TestStationRecordDTO missing LogisticData.PCBANumber")
 			}
@@ -77,7 +80,7 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 			var key string
 			for _, step := range v {
 				if step.TestStepName == "PCBA Scan" || step.TestStepName == "Compare PCBA Serial Number" {
-					key = step.GetMeasuredValueString()
+					key = strings.TrimSpace(step.GetMeasuredValueString())
 					break
 				}
 			}

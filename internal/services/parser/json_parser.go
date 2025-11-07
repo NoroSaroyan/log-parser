@@ -19,6 +19,7 @@ package parser
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
 )
@@ -32,10 +33,10 @@ import (
 // Parsing logic:
 //   - Iterates each element, inspects the first non-whitespace byte to distinguish arrays vs objects.
 //   - For arrays ('['), attempts to parse as []TestStepDTO, then checks for a PCBA identifier
-//     in the steps to filter only test steps corresponding to a known "Final" TestStation record.
+//     in the steps to filter only test steps corresponding to a known TestStation record.
 //   - For objects ('{'), parses into a generic map first to check the 'TestStation' field:
 //   - If 'TestStation' is "PCBA" or "Final", attempts to parse as TestStationRecordDTO.
-//   - "Final" TestStationRecords are indexed by their PCBANumber to correlate with test steps.
+//   - All TestStationRecords are indexed by their PCBANumber to correlate with test steps.
 //   - If 'TestStation' is "Download", parses as DownloadInfoDTO.
 //   - Ignores or logs any elements with unexpected structures or missing fields.
 //
@@ -54,8 +55,13 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 	}
 
 	var results []interface{}
-	finalStations := make(map[string]dto.TestStationRecordDTO)
+	allStations := make(map[string]dto.TestStationRecordDTO)
+	var testStepsToProcess []struct {
+		steps []dto.TestStepDTO
+		index int
+	}
 
+	// First pass: collect all TestStationRecords and DownloadInfo
 	for i, raw := range rawItems {
 		rawTrim := trimSpaces(raw)
 		if len(rawTrim) == 0 {
@@ -70,24 +76,11 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 				continue
 			}
 
-			var pcbaFromSteps string
-			for _, s := range steps {
-				if s.TestStepName == "Compare PCBA Serial Number" || s.TestStepName == "PCBA Scan" {
-					pcbaFromSteps = s.GetMeasuredValueString()
-					break
-				}
-			}
-
-			if pcbaFromSteps != "" {
-				if _, ok := finalStations[pcbaFromSteps]; ok {
-					fmt.Printf("Matched FINAL test steps for PCBA: %s at index %d (%d steps)\n", pcbaFromSteps, i, len(steps))
-					results = append(results, steps)
-				} else {
-					fmt.Printf("Skipping test steps — no FINAL station match for PCBA: %s at index %d\n", pcbaFromSteps, i)
-				}
-			} else {
-				fmt.Printf("No PCBA identifier in test steps at index %d\n", i)
-			}
+			// Store TestSteps for second pass processing
+			testStepsToProcess = append(testStepsToProcess, struct {
+				steps []dto.TestStepDTO
+				index int
+			}{steps, i})
 
 		case '{':
 			var probe map[string]interface{}
@@ -115,17 +108,15 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 					fmt.Printf("Failed to parse TestStationRecordDTO at index %d: %v\n", i, err)
 					continue
 				}
-				if record.TestStation == "Final" {
-					fmt.Printf("Parsed FINAL TestStationRecord at index %d: PCBANumber=%s, PartNumber=%s\n",
-						i, record.LogisticData.PCBANumber, record.PartNumber)
-					finalStations[record.LogisticData.PCBANumber] = record
-				}
+				//fmt.Printf("Parsed %s TestStationRecord at index %d: PCBANumber=%s, PartNumber=%s\n",
+				//	record.TestStation, i, record.LogisticData.PCBANumber, record.PartNumber)
+				allStations[record.LogisticData.PCBANumber] = record
 				results = append(results, record)
 
 			case "Download":
 				var download dto.DownloadInfoDTO
 				if err := json.Unmarshal(raw, &download); err != nil {
-					fmt.Printf("Failed to parse DownloadInfoDTO at index %d: %v\n", i, err)
+					//fmt.Printf("Failed to parse DownloadInfoDTO at index %d: %v\n", i, err)
 					continue
 				}
 				results = append(results, download)
@@ -138,6 +129,31 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 		default:
 			fmt.Printf("Unexpected JSON token at index %d: %c\n", i, rawTrim[0])
 			continue
+		}
+	}
+
+	for _, testStepData := range testStepsToProcess {
+		steps := testStepData.steps
+		i := testStepData.index
+
+		var pcbaFromSteps string
+		for _, s := range steps {
+			if s.TestStepName == "Compare PCBA Serial Number" || s.TestStepName == "PCBA Scan" {
+				pcbaFromSteps = strings.TrimSpace(s.GetMeasuredValueString())
+				break
+			}
+		}
+
+		if pcbaFromSteps != "" {
+			if _, ok := allStations[pcbaFromSteps]; ok {
+				//fmt.Printf("Matched test steps for PCBA: %s (%s station) at index %d (%d steps)\n",
+				//	pcbaFromSteps, station.TestStation, i, len(steps))
+				results = append(results, steps)
+			} else {
+				fmt.Printf("Skipping test steps — no station match for PCBA: %s at index %d\n", pcbaFromSteps, i)
+			}
+		} else {
+			fmt.Printf("No PCBA identifier in test steps at index %d\n", i)
 		}
 	}
 

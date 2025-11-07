@@ -1,3 +1,6 @@
+-- Initial database schema
+-- Creates all base tables for the log parser application
+
 CREATE TABLE download_info
 (
     id                     SERIAL PRIMARY KEY,
@@ -70,5 +73,3 @@ CREATE TABLE test_step
             REFERENCES test_station_record (id)
             ON DELETE CASCADE
 );
-
-

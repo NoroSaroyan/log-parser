@@ -55,3 +55,8 @@ corporate_resources
 
 restore.md
 
+./deployments/docker-compose.yml
+
+./configs/config.yaml
+
+no_commit/

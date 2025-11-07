@@ -28,14 +28,12 @@ func NewDownloadInfoRepository(db *sql.DB) *DownloadInfoRepository {
 
 // Insert adds a new DownloadInfoDB record to the download_info table.
 //
-// If a record with the same tcu_pcba_number already exists, the insertion
-// is skipped due to ON CONFLICT DO NOTHING. Returns any database error encountered.
+// Returns any database error encountered.
 func (r *DownloadInfoRepository) Insert(ctx context.Context, d *db.DownloadInfoDB) error {
 	query := `
 	INSERT INTO download_info 
 	(test_station, flash_entity_type, tcu_pcba_number, flash_elapsed_time, tcu_entity_flash_state, part_number, product_line, download_tool_version, download_finished_time)
 	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-	ON CONFLICT (tcu_pcba_number) DO NOTHING
 	`
 
 	_, err := r.db.ExecContext(ctx, query,
