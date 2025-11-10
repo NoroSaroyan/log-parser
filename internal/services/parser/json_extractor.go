@@ -57,7 +57,6 @@ func ExtractJson(logs string) ([]string, error) {
 			currentBlock.Reset()
 			braceCount = 0
 
-			// Extract everything after " Data  "
 			dataIdx := strings.Index(line, " Data  ")
 			if dataIdx != -1 {
 				jsonPart := line[dataIdx+7:] // 7 = len(" Data  ")
@@ -66,9 +65,7 @@ func ExtractJson(logs string) ([]string, error) {
 				braceCount += strings.Count(jsonPart, "{") - strings.Count(jsonPart, "}")
 			}
 		} else if strings.Contains(line, " Data  [") {
-			// Start of a new Data array block
 			if insideBlock {
-				// Previous block wasn't properly closed, save it anyway
 				blocks = append(blocks, currentBlock.String())
 			}
 
@@ -76,17 +73,14 @@ func ExtractJson(logs string) ([]string, error) {
 			currentBlock.Reset()
 			braceCount = 0
 
-			// Extract everything after " Data  "
 			dataIdx := strings.Index(line, " Data  ")
 			if dataIdx != -1 {
-				jsonPart := line[dataIdx+7:] // 7 = len(" Data  ")
+				jsonPart := line[dataIdx+7:]
 				currentBlock.WriteString(jsonPart)
 				currentBlock.WriteByte('\n')
 				braceCount += strings.Count(jsonPart, "[") - strings.Count(jsonPart, "]")
 			}
 		} else if insideBlock {
-			// Continue building the current block
-			// Extract JSON content after the log prefix
 			prefixEnd := strings.Index(line, "]:")
 			if prefixEnd != -1 && len(line) > prefixEnd+2 {
 				jsonPart := line[prefixEnd+2:]
@@ -96,7 +90,6 @@ func ExtractJson(logs string) ([]string, error) {
 				braceCount += strings.Count(jsonPart, "[") - strings.Count(jsonPart, "]")
 			}
 
-			// Check if block is complete
 			if braceCount <= 0 && currentBlock.Len() > 10 {
 				blocks = append(blocks, currentBlock.String())
 				insideBlock = false
@@ -105,7 +98,6 @@ func ExtractJson(logs string) ([]string, error) {
 		}
 	}
 
-	// Handle case where file ends while inside a block
 	if insideBlock && currentBlock.Len() > 10 {
 		blocks = append(blocks, currentBlock.String())
 	}

@@ -1,0 +1,22 @@
+[
+  {
+    "TestStation": "PCBA",
+    "SerialNumber": "SN12345",
+    "LogisticData": {
+      "PCBANumber": "PCBA001",
+      "SerialNumber": "SN12345"
+    }
+  },
+  [
+    {
+      "TestStepName": "Compare PCBA Serial Number",
+      "TestStepResult": "PASS",
+      "TestMeasuredValue": "PCBA999"
+    },
+    {
+      "TestStepName": "Voltage Test",
+      "TestStepResult": "PASS",
+      "TestMeasuredValue": "3.3V"
+    }
+  ]
+]

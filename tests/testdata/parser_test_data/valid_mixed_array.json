@@ -1,0 +1,37 @@
+[
+  {
+    "TestStation": "Download",
+    "SerialNumber": "SN12345",
+    "PartNumber": "PN67890"
+  },
+  {
+    "TestStation": "PCBA",
+    "SerialNumber": "SN12345",
+    "PartNumber": "PN67890",
+    "LogisticData": {
+      "PCBANumber": "PCBA001",
+      "SerialNumber": "SN12345"
+    }
+  },
+  [
+    {
+      "TestStepName": "Compare PCBA Serial Number",
+      "TestStepResult": "PASS",
+      "TestMeasuredValue": "PCBA001"
+    },
+    {
+      "TestStepName": "Voltage Test",
+      "TestStepResult": "PASS",
+      "TestMeasuredValue": "3.3V"
+    }
+  ],
+  {
+    "TestStation": "Final",
+    "SerialNumber": "SN12345",
+    "PartNumber": "PN67890",
+    "LogisticData": {
+      "PCBANumber": "PCBA001",
+      "SerialNumber": "SN12345"
+    }
+  }
+]

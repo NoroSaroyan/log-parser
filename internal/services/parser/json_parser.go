@@ -61,7 +61,6 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 		index int
 	}
 
-	// First pass: collect all TestStationRecords and DownloadInfo
 	for i, raw := range rawItems {
 		rawTrim := trimSpaces(raw)
 		if len(rawTrim) == 0 {
@@ -76,7 +75,6 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 				continue
 			}
 
-			// Store TestSteps for second pass processing
 			testStepsToProcess = append(testStepsToProcess, struct {
 				steps []dto.TestStepDTO
 				index int

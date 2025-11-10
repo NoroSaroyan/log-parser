@@ -1,0 +1,14 @@
+[
+  {
+    "TestStation": "Unknown",
+    "SerialNumber": "SN12345"
+  },
+  {
+    "SerialNumber": "SN12345",
+    "PartNumber": "PN67890"
+  },
+  {
+    "TestStation": "",
+    "SerialNumber": "SN12345"
+  }
+]
