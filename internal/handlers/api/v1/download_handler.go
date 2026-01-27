@@ -1,9 +1,10 @@
 package v1
 
 import (
-	"github.com/NoroSaroyan/log-parser/internal/services/downloadinfo"
-	"log"
 	"net/http"
+
+	"github.com/NoroSaroyan/log-parser/internal/infrastructure/logger"
+	"github.com/NoroSaroyan/log-parser/internal/services/downloadinfo"
 )
 
 // DownloadHandler provides HTTP handlers for working with DownloadInfo resources.
@@ -54,7 +55,13 @@ func (h *DownloadHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	dto, err := h.svc.GetByPCBANumber(r.Context(), pcba)
 	if err != nil {
-		log.Printf("GetByPCBANumber error: %v", err)
+		logger.Error("Failed to retrieve DownloadInfo by PCBA number",
+			err,
+			logger.WithFields(map[string]interface{}{
+				"pcba_number": pcba,
+				"reason":      "Database query or service error occurred",
+			}),
+		)
 		respondError(w, http.StatusInternalServerError, "internal error")
 		return
 	}

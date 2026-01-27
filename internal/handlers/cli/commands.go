@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,7 +71,13 @@ func Run() error {
 	for _, path := range args {
 		fi, err := os.Stat(path)
 		if err != nil {
-			log.Printf("Skipping %s: %v", path, err)
+			logger.Warn("Skipping file due to stat error",
+				logger.WithFields(map[string]interface{}{
+					"path":   path,
+					"error":  err.Error(),
+					"reason": "File cannot be accessed. Check permissions and path validity",
+				}),
+			)
 			continue
 		}
 
@@ -83,17 +88,35 @@ func Run() error {
 				}
 				if !d.IsDir() && isSupportedFile(p) {
 					if err := processSingleFile(ctx, p, appInstance, dispatcherService); err != nil {
-						log.Printf("Error processing file %s: %v", p, err)
+						logger.Error("Error processing file",
+							err,
+							logger.WithFields(map[string]interface{}{
+								"file":   p,
+								"reason": "An error occurred while processing this file. Check the error details above",
+							}),
+						)
 					}
 				}
 				return nil
 			})
 			if err != nil {
-				log.Printf("Error walking directory %s: %v", path, err)
+				logger.Error("Error walking directory",
+					err,
+					logger.WithFields(map[string]interface{}{
+						"directory": path,
+						"reason":    "An error occurred while traversing the directory",
+					}),
+				)
 			}
 		} else {
 			if err := processSingleFile(ctx, path, appInstance, dispatcherService); err != nil {
-				log.Printf("Error processing file %s: %v", path, err)
+				logger.Error("Error processing file",
+					err,
+					logger.WithFields(map[string]interface{}{
+						"file":   path,
+						"reason": "An error occurred while processing this file",
+					}),
+				)
 			}
 		}
 	}
@@ -109,9 +132,9 @@ func isSupportedFile(path string) bool {
 
 func processSingleFile(ctx context.Context, filepath string, appInstance *app.App, dispatcherService dispatcher.DispatcherService) error {
 	startTime := time.Now()
-	
+
 	logger.Info("Starting file processing", logger.WithField("file", filepath))
-	
+
 	// Read file
 	logData, err := readFileContent(filepath)
 	if err != nil {
@@ -121,7 +144,7 @@ func processSingleFile(ctx context.Context, filepath string, appInstance *app.Ap
 		}))
 		return fmt.Errorf("failed to read file: %w", err)
 	}
-	
+
 	logger.Debug("File read successfully", logger.WithFields(map[string]interface{}{
 		"file":       filepath,
 		"size_bytes": len(logData),
@@ -136,7 +159,7 @@ func processSingleFile(ctx context.Context, filepath string, appInstance *app.Ap
 		}))
 		return fmt.Errorf("failed to extract JSON blocks: %w", err)
 	}
-	
+
 	logger.Debug("JSON extraction completed", logger.WithFields(map[string]interface{}{
 		"file":         filepath,
 		"total_blocks": len(allBlocks),
@@ -151,7 +174,7 @@ func processSingleFile(ctx context.Context, filepath string, appInstance *app.Ap
 		}))
 		return fmt.Errorf("failed to filter relevant JSON blocks: %w", err)
 	}
-	
+
 	logger.Debug("Block filtering completed", logger.WithFields(map[string]interface{}{
 		"file":             filepath,
 		"filtered_blocks":  len(filteredBlocks),
@@ -171,7 +194,7 @@ func processSingleFile(ctx context.Context, filepath string, appInstance *app.Ap
 
 	// Calculate statistics
 	stats := calculateParsingStatistics(parsedItems)
-	
+
 	logger.Info("PARSING STATISTICS", logger.WithFields(map[string]interface{}{
 		"file":           filepath,
 		"Final":          stats.FinalStations,
@@ -190,7 +213,7 @@ func processSingleFile(ctx context.Context, filepath string, appInstance *app.Ap
 		}))
 		return fmt.Errorf("failed to group data: %w", err)
 	}
-	
+
 	logger.Debug("Data grouping completed", logger.WithFields(map[string]interface{}{
 		"file":   filepath,
 		"groups": len(groupedData),
@@ -206,7 +229,7 @@ func processSingleFile(ctx context.Context, filepath string, appInstance *app.Ap
 	}
 
 	duration := time.Since(startTime)
-	logger.Info("✅ File processing completed", logger.WithFields(map[string]interface{}{
+	logger.Info("File processing completed", logger.WithFields(map[string]interface{}{
 		"file":            filepath,
 		"duration":        duration,
 		"groups_inserted": len(groupedData),
@@ -217,17 +240,17 @@ func processSingleFile(ctx context.Context, filepath string, appInstance *app.Ap
 
 // ParsingStatistics holds statistics about parsed items
 type ParsingStatistics struct {
-	FinalStations   int
-	PCBAStations    int
-	DownloadInfo    int
-	TestStepArrays  int
-	TotalTestSteps  int
+	FinalStations  int
+	PCBAStations   int
+	DownloadInfo   int
+	TestStepArrays int
+	TotalTestSteps int
 }
 
 // calculateParsingStatistics analyzes parsed items and returns detailed statistics
 func calculateParsingStatistics(parsedItems []interface{}) ParsingStatistics {
 	stats := ParsingStatistics{}
-	
+
 	for _, item := range parsedItems {
 		switch v := item.(type) {
 		case dto.TestStationRecordDTO:
@@ -243,7 +266,7 @@ func calculateParsingStatistics(parsedItems []interface{}) ParsingStatistics {
 			stats.TotalTestSteps += len(v)
 		}
 	}
-	
+
 	return stats
 }
 

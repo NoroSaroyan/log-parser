@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/NoroSaroyan/log-parser/internal/domain/models/dto"
+	"github.com/NoroSaroyan/log-parser/internal/infrastructure/logger"
 )
 
 // ParseMixedJSONArray parses a raw JSON byte array representing a mixed-type JSON array.
@@ -33,7 +34,8 @@ import (
 // Parsing logic:
 //   - Iterates each element, inspects the first non-whitespace byte to distinguish arrays vs objects.
 //   - For arrays ('['), attempts to parse as []TestStepDTO, then checks for a PCBA identifier
-//     in the steps to filter only test steps corresponding to a known TestStation record.
+//     in the steps by looking for "PCBA Scan", "Compare PCBA Serial Number", or "Valid PCBA Serial Number"
+//     steps to filter only test steps corresponding to a known TestStation record.
 //   - For objects ('{'), parses into a generic map first to check the 'TestStation' field:
 //   - If 'TestStation' is "PCBA" or "Final", attempts to parse as TestStationRecordDTO.
 //   - All TestStationRecords are indexed by their PCBANumber to correlate with test steps.
@@ -72,7 +74,13 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 		case '[':
 			var steps []dto.TestStepDTO
 			if err := json.Unmarshal(raw, &steps); err != nil {
-				fmt.Printf("Error unmarshaling TestStepDTO array at index %d: %v\n", i, err)
+				logger.Debug("Failed to unmarshal test step array",
+				logger.WithFields(map[string]interface{}{
+					"array_index": i,
+					"error":       err.Error(),
+					"reason":      "This array will not be processed. The JSON structure may be malformed or not a valid test step array",
+				}),
+			)
 				continue
 			}
 
@@ -85,19 +93,35 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 		case '{':
 			var probe map[string]interface{}
 			if err := json.Unmarshal(raw, &probe); err != nil {
-				fmt.Printf("Error probing object at index %d: %v\n", i, err)
+				logger.Debug("Failed to probe JSON object structure",
+				logger.WithFields(map[string]interface{}{
+					"object_index": i,
+					"error":        err.Error(),
+					"reason":       "Could not parse this JSON object to determine its type (TestStation, Download, etc.)",
+				}),
+			)
 				continue
 			}
 
 			tsRaw, hasTS := probe["TestStation"]
 			if !hasTS {
-				fmt.Printf("Object at index %d missing 'TestStation' field\n", i)
+				logger.Debug("JSON object missing TestStation field",
+				logger.WithFields(map[string]interface{}{
+					"object_index": i,
+					"reason":       "Expected JSON object to have 'TestStation' field identifying it as PCBA, Final, or Download test data",
+				}),
+			)
 				continue
 			}
 
 			ts, ok := tsRaw.(string)
 			if !ok {
-				fmt.Printf("'TestStation' field is not string at index %d\n", i)
+				logger.Debug("TestStation field has invalid type",
+				logger.WithFields(map[string]interface{}{
+					"object_index": i,
+					"reason":       "TestStation field must be a string, but got a different type. Cannot determine record type",
+				}),
+			)
 				continue
 			}
 
@@ -105,12 +129,22 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 			case "PCBA", "Final":
 				var record dto.TestStationRecordDTO
 				if err := json.Unmarshal(raw, &record); err != nil {
-					fmt.Printf("Failed to parse TestStationRecordDTO at index %d: %v\n", i, err)
+					logger.Debug("Failed to parse TestStationRecord",
+					logger.WithFields(map[string]interface{}{
+						"object_index": i,
+						"test_station": ts,
+						"error":        err.Error(),
+						"reason":       "TestStationRecord object structure does not match expected DTO. See JSON structure at this index in the log file",
+					}),
+				)
 					continue
 				}
 				//fmt.Printf("Parsed %s TestStationRecord at index %d: PCBANumber=%s, PartNumber=%s\n",
 				//	record.TestStation, i, record.LogisticData.PCBANumber, record.PartNumber)
-				allStations[record.LogisticData.PCBANumber] = record
+				pcbaNum := strings.TrimSpace(record.LogisticData.PCBANumber)
+				if pcbaNum != "" {
+					allStations[pcbaNum] = record
+				}
 				results = append(results, record)
 
 			case "Download":
@@ -122,12 +156,25 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 				results = append(results, download)
 
 			default:
-				fmt.Printf("Unknown TestStation value %q at index %d\n", ts, i)
+				logger.Debug("Unknown TestStation type encountered",
+				logger.WithFields(map[string]interface{}{
+					"object_index":   i,
+					"test_station":   ts,
+					"supported_types": []string{"PCBA", "Final", "Download"},
+					"reason":         "TestStation has an unexpected value. Supported types are: PCBA, Final, Download",
+				}),
+			)
 				continue
 			}
 
 		default:
-			fmt.Printf("Unexpected JSON token at index %d: %c\n", i, rawTrim[0])
+			logger.Debug("Unexpected JSON element type",
+			logger.WithFields(map[string]interface{}{
+				"element_index": i,
+				"first_token":   string(rawTrim[0]),
+				"reason":        "Expected JSON array '[' or object '{', but got different token. This element will be skipped",
+			}),
+		)
 			continue
 		}
 	}
@@ -138,7 +185,7 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 
 		var pcbaFromSteps string
 		for _, s := range steps {
-			if s.TestStepName == "Compare PCBA Serial Number" || s.TestStepName == "PCBA Scan" {
+			if s.TestStepName == "Compare PCBA Serial Number" || s.TestStepName == "PCBA Scan" || s.TestStepName == "Valid PCBA Serial Number" {
 				pcbaFromSteps = strings.TrimSpace(s.GetMeasuredValueString())
 				break
 			}
@@ -150,10 +197,26 @@ func ParseMixedJSONArray(data []byte) ([]interface{}, error) {
 				//	pcbaFromSteps, station.TestStation, i, len(steps))
 				results = append(results, steps)
 			} else {
-				fmt.Printf("Skipping test steps — no station match for PCBA: %s at index %d\n", pcbaFromSteps, i)
+				logger.Warn("Test steps cannot be matched to any test station",
+				logger.WithFields(map[string]interface{}{
+					"array_index":             i,
+					"pcba_from_test_steps":    pcbaFromSteps,
+					"step_count":              len(steps),
+					"reason":                  "PCBA number was extracted from test steps, but no matching TestStationRecord was found with this PCBA",
+					"debug_checklist":         []string{"1. Verify test station record was parsed before test steps in JSON", "2. Check if test station record has empty PCBANumber (use ProductSN fallback)", "3. Verify PCBA numbers match exactly (no whitespace differences)"},
+				}),
+			)
 			}
 		} else {
-			fmt.Printf("No PCBA identifier in test steps at index %d\n", i)
+			logger.Debug("Test step array lacks PCBA identifier",
+			logger.WithFields(map[string]interface{}{
+				"array_index":            i,
+				"step_count":             len(steps),
+				"supported_pcba_steps":   []string{"PCBA Scan", "Compare PCBA Serial Number", "Valid PCBA Serial Number", "Write PCBA Serial Number"},
+				"reason":                 "No PCBA number found in test steps. Device likely failed before PCBA identification step was reached",
+				"debug_checklist":         []string{"1. Check if array contains: 'PCBA Scan', 'Compare PCBA Serial Number', or 'Valid PCBA Serial Number' steps", "2. If none found, device probably failed early in test sequence", "3. These steps should have TestMeasuredValue containing the PCBA number"},
+			}),
+		)
 		}
 	}
 
@@ -171,4 +234,12 @@ func trimSpaces(raw json.RawMessage) []byte {
 		}
 	}
 	return nil
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

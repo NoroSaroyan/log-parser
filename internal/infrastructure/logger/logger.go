@@ -1,148 +1,205 @@
 package logger
 
 import (
-	"io"
 	"os"
 	"strings"
 
-	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var logger *logrus.Logger
+var log *zap.Logger
 
-// InitLogger initializes logrus with the specified level and CLI-friendly formatting
+// InitLogger initializes zap logger with the specified level
 func InitLogger(level string) error {
-	logger = logrus.New()
-	
-	// Set log level
+	// Determine log level
+	logLevel := zapcore.InfoLevel
 	switch strings.ToUpper(level) {
 	case "DEBUG":
-		logger.SetLevel(logrus.DebugLevel)
+		logLevel = zapcore.DebugLevel
 	case "INFO":
-		logger.SetLevel(logrus.InfoLevel)
+		logLevel = zapcore.InfoLevel
 	case "WARN":
-		logger.SetLevel(logrus.WarnLevel)
+		logLevel = zapcore.WarnLevel
 	case "ERROR":
-		logger.SetLevel(logrus.ErrorLevel)
+		logLevel = zapcore.ErrorLevel
 	case "FATAL":
-		logger.SetLevel(logrus.FatalLevel)
+		logLevel = zapcore.FatalLevel
 	default:
-		logger.SetLevel(logrus.InfoLevel)
+		logLevel = zapcore.InfoLevel
 	}
 
-	// Set output
-	logger.SetOutput(os.Stdout)
+	// Check if running in terminal
+	isTerminal := isTerminalOutput()
 
-	// Use colored text formatter for CLI
-	if isTerminal() {
-		logger.SetFormatter(&logrus.TextFormatter{
-			ForceColors:     true,
-			FullTimestamp:   true,
-			TimestampFormat: "2006-01-02 15:04:05.000",
-		})
-	} else {
-		logger.SetFormatter(&logrus.TextFormatter{
-			DisableColors:   true,
-			FullTimestamp:   true,
-			TimestampFormat: "2006-01-02 15:04:05.000",
-		})
+	// Create encoder config
+	encoderConfig := zapcore.EncoderConfig{
+		TimeKey:        "ts",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		CallerKey:      "caller",
+		FunctionKey:    "func",
+		MessageKey:     "msg",
+		StacktraceKey:  "stacktrace",
+		LineEnding:     zapcore.DefaultLineEnding,
+		EncodeLevel:    zapcore.CapitalColorLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
+
+	if !isTerminal {
+		encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
+	}
+
+	// Create core
+	core := zapcore.NewCore(
+		zapcore.NewConsoleEncoder(encoderConfig),
+		zapcore.AddSync(os.Stdout),
+		logLevel,
+	)
+
+	// Create logger with stack trace on error and above
+	log = zap.New(core, zap.AddCallerSkip(1))
 
 	return nil
 }
 
-// SetOutput sets the logger output (useful for testing)
-func SetOutput(output io.Writer) {
-	if logger != nil {
-		logger.SetOutput(output)
-	}
-}
-
 // GetLogger returns the logger instance for direct use if needed
-func GetLogger() *logrus.Logger {
-	return logger
+func GetLogger() *zap.Logger {
+	if log == nil {
+		// Initialize default logger if not initialized
+		_ = InitLogger("info")
+	}
+	return log
 }
 
-// Info logs an info message with optional structured fields
-func Info(msg string, fields ...logrus.Fields) {
-	if logger == nil {
+// Info logs an info message
+func Info(msg string, fields ...interface{}) {
+	if log == nil {
 		return
 	}
-	
 	if len(fields) > 0 {
-		logger.WithFields(fields[0]).Info(msg)
+		log.Info(msg, zap.Any("fields", fields[0]))
 	} else {
-		logger.Info(msg)
+		log.Info(msg)
 	}
 }
 
-// Debug logs a debug message with optional structured fields
-func Debug(msg string, fields ...logrus.Fields) {
-	if logger == nil {
+// Debug logs a debug message
+func Debug(msg string, fields ...interface{}) {
+	if log == nil {
 		return
 	}
-	
 	if len(fields) > 0 {
-		logger.WithFields(fields[0]).Debug(msg)
+		log.Debug(msg, zap.Any("fields", fields[0]))
 	} else {
-		logger.Debug(msg)
+		log.Debug(msg)
 	}
 }
 
-// Warn logs a warning message with optional structured fields
-func Warn(msg string, fields ...logrus.Fields) {
-	if logger == nil {
+// Warn logs a warning message
+func Warn(msg string, fields ...interface{}) {
+	if log == nil {
 		return
 	}
-	
 	if len(fields) > 0 {
-		logger.WithFields(fields[0]).Warn(msg)
+		log.Warn(msg, zap.Any("fields", fields[0]))
 	} else {
-		logger.Warn(msg)
+		log.Warn(msg)
 	}
 }
 
-// Error logs an error message with optional structured fields
-func Error(msg string, fields ...logrus.Fields) {
-	if logger == nil {
+// Error logs an error message
+// Can be called as: Error(msg), Error(msg, err), or Error(msg, err, fields)
+func Error(msg string, args ...interface{}) {
+	if log == nil {
 		return
 	}
-	
-	if len(fields) > 0 {
-		logger.WithFields(fields[0]).Error(msg)
+
+	var err error
+	var fields interface{}
+
+	// Parse arguments
+	if len(args) > 0 {
+		// First arg could be error or fields map
+		if errVal, ok := args[0].(error); ok {
+			err = errVal
+			if len(args) > 1 {
+				fields = args[1]
+			}
+		} else if mapVal, ok := args[0].(map[string]interface{}); ok {
+			fields = mapVal
+		}
+	}
+
+	// Build log call
+	if err != nil {
+		if fields != nil {
+			log.Error(msg, zap.Error(err), zap.Any("fields", fields))
+		} else {
+			log.Error(msg, zap.Error(err))
+		}
 	} else {
-		logger.Error(msg)
+		if fields != nil {
+			log.Error(msg, zap.Any("fields", fields))
+		} else {
+			log.Error(msg)
+		}
 	}
 }
 
-// Fatal logs a fatal message and exits the program
-func Fatal(msg string, fields ...logrus.Fields) {
-	if logger == nil {
+// Fatal logs a fatal message and exits
+// Can be called as: Fatal(msg), Fatal(msg, err), or Fatal(msg, err, fields)
+func Fatal(msg string, args ...interface{}) {
+	if log == nil {
 		return
 	}
-	
-	if len(fields) > 0 {
-		logger.WithFields(fields[0]).Fatal(msg)
+
+	var err error
+	var fields interface{}
+
+	// Parse arguments
+	if len(args) > 0 {
+		// First arg could be error or fields map
+		if errVal, ok := args[0].(error); ok {
+			err = errVal
+			if len(args) > 1 {
+				fields = args[1]
+			}
+		} else if mapVal, ok := args[0].(map[string]interface{}); ok {
+			fields = mapVal
+		}
+	}
+
+	// Build log call
+	if err != nil {
+		if fields != nil {
+			log.Fatal(msg, zap.Error(err), zap.Any("fields", fields))
+		} else {
+			log.Fatal(msg, zap.Error(err))
+		}
 	} else {
-		logger.Fatal(msg)
+		if fields != nil {
+			log.Fatal(msg, zap.Any("fields", fields))
+		} else {
+			log.Fatal(msg)
+		}
 	}
 }
 
-// Helper functions to create logrus.Fields more easily
-func Fields() logrus.Fields {
-	return make(logrus.Fields)
+// WithField creates a map with a single key-value pair for structured logging
+func WithField(key string, value interface{}) map[string]interface{} {
+	return map[string]interface{}{key: value}
 }
 
-func WithField(key string, value interface{}) logrus.Fields {
-	return logrus.Fields{key: value}
+// WithFields creates a map from the given key-value pairs for structured logging
+func WithFields(fields map[string]interface{}) map[string]interface{} {
+	return fields
 }
 
-func WithFields(fields map[string]interface{}) logrus.Fields {
-	return logrus.Fields(fields)
-}
-
-// isTerminal checks if stdout is connected to a terminal (for color support)
-func isTerminal() bool {
+// isTerminalOutput checks if stdout is connected to a terminal
+func isTerminalOutput() bool {
 	fileInfo, err := os.Stdout.Stat()
 	if err != nil {
 		return false
