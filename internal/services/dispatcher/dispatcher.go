@@ -116,6 +116,13 @@ func NewDispatcherService(
 
 // DispatchGroups implements DispatcherService.DispatchGroups.
 //
+// Phase 0 hotfix semantics: a failure inside a single group is logged and
+// skipped — the rest of the file continues processing. A structural
+// "more step arrays than station records" situation is no longer fatal:
+// we insert what we can pair and log WARN about the excess. The method
+// only returns a non-nil error if *every* group failed (catastrophic
+// scenario — e.g. DB unreachable).
+//
 // See interface documentation for full details.
 func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.GroupedDataDTO) error {
 	logger.Info("Dispatch starting",
@@ -124,144 +131,219 @@ func (s *dispatcherService) DispatchGroups(ctx context.Context, groups []dto.Gro
 		}),
 	)
 
+	var (
+		groupsOK           int
+		groupsFailed       int
+		groupsWithExcess   int // processed OK but had unmatched step arrays
+		groupsMismatchType int // processed OK but had step/station type mismatches
+	)
+
 	for _, group := range groups {
-		key := groupKey(group)
-
-		logger.Debug("Dispatching group",
-			logger.WithFields(map[string]interface{}{
-				"pcba":                 key,
-				"has_download":         group.DownloadInfo != (dto.DownloadInfoDTO{}),
-				"station_record_count": len(group.TestStationRecords),
-				"step_array_count":     len(group.TestSteps),
-			}),
-		)
-
-		if (group.DownloadInfo != dto.DownloadInfoDTO{}) {
-			if err := s.downloadInfoService.InsertDownloadInfo(ctx, group.DownloadInfo); err != nil {
-				logger.Error("Failed to insert DownloadInfo",
-					err,
-					logger.WithFields(map[string]interface{}{
-						"pcba":           key,
-						"tcu_pcba":       group.DownloadInfo.TcuPCBANumber,
-						"group_snapshot": describeGroup(group),
-					}),
-				)
-				return fmt.Errorf("failed to insert DownloadInfo for PCBA %s: %w", key, err)
-			}
+		result := s.dispatchSingleGroup(ctx, group)
+		if result.err != nil {
+			groupsFailed++
+			logger.Warn("Group dispatch failed — skipping group, continuing with next",
+				logger.WithFields(map[string]interface{}{
+					"pcba":           groupKey(group),
+					"error":          result.err.Error(),
+					"stage":          result.failedStage,
+					"group_snapshot": describeGroup(group),
+					"note":           "Phase 0 hotfix: single-group errors are non-fatal. File processing continues.",
+				}),
+			)
+			continue
 		}
-
-		testStationIDs := make([]int, 0, len(group.TestStationRecords))
-		for _, tsr := range group.TestStationRecords {
-			var logisticDataID int
-			var err error
-
-			if (tsr.LogisticData != dto.LogisticDataDTO{}) {
-				logisticDataID, err = s.logisticDataService.GetOrInsertLogisticData(ctx, tsr.LogisticData)
-				if err != nil {
-					logger.Error("Failed to insert LogisticData",
-						err,
-						logger.WithFields(map[string]interface{}{
-							"pcba":             strings.TrimSpace(tsr.LogisticData.PCBANumber),
-							"product_sn":       strings.TrimSpace(tsr.LogisticData.ProductSN),
-							"station_type":     strings.TrimSpace(tsr.TestStation),
-							"logistic_data_id": logisticDataID,
-							"group_key":        key,
-						}),
-					)
-					return fmt.Errorf("failed to insert LogisticData for PCBA %s: %w", tsr.LogisticData.PCBANumber, err)
-				}
-				if logisticDataID == 0 {
-					logger.Error("Resolved LogisticDataID is 0",
-						logger.WithFields(map[string]interface{}{
-							"pcba":         strings.TrimSpace(tsr.LogisticData.PCBANumber),
-							"product_sn":   strings.TrimSpace(tsr.LogisticData.ProductSN),
-							"station_type": strings.TrimSpace(tsr.TestStation),
-							"group_key":    key,
-							"dto_snapshot": tsr.LogisticData,
-						}),
-					)
-					return fmt.Errorf("resolved LogisticDataID is 0 for PCBA %s", tsr.LogisticData.PCBANumber)
-				}
-			} else {
-				logger.Error("Station record has no LogisticData",
-					logger.WithFields(map[string]interface{}{
-						"station_type": strings.TrimSpace(tsr.TestStation),
-						"group_key":    key,
-					}),
-				)
-				return fmt.Errorf("missing LogisticData for PCBA %s: cannot insert TestStationRecord", tsr.LogisticData.PCBANumber)
-			}
-
-			testStationID, err := s.testStationService.InsertTestStationRecord(ctx, tsr, logisticDataID)
-			if err != nil {
-				logger.Error("Failed to insert TestStationRecord",
-					err,
-					logger.WithFields(map[string]interface{}{
-						"pcba":             strings.TrimSpace(tsr.LogisticData.PCBANumber),
-						"station_type":     strings.TrimSpace(tsr.TestStation),
-						"logistic_data_id": logisticDataID,
-						"group_key":        key,
-					}),
-				)
-				return fmt.Errorf("failed to insert TestStationRecord for PCBA %s: %w", tsr.LogisticData.PCBANumber, err)
-			}
-			testStationIDs = append(testStationIDs, testStationID)
+		groupsOK++
+		if result.unmatchedStepArrays > 0 {
+			groupsWithExcess++
 		}
+		if result.typeMismatches > 0 {
+			groupsMismatchType++
+		}
+	}
 
-		for i, stepsSlice := range group.TestSteps {
-			if i >= len(testStationIDs) {
-				// Fatal-for-file signature. Before returning, dump the full
-				// shape of the group so we can see exactly which step array
-				// (by inferred type) could not be paired with a station.
-				inferredType, stepPCBA := parser.InferStationTypeFromSteps(stepsSlice)
-				logger.Warn("Dispatcher mismatch: more step arrays than station records",
-					logger.WithFields(map[string]interface{}{
-						"pcba":                    key,
-						"station_record_count":    len(testStationIDs),
-						"step_array_count":        len(group.TestSteps),
-						"failing_array_index":     i,
-						"failing_array_inferred":  inferredType,
-						"failing_array_scan_pcba": stepPCBA,
-						"failing_array_steps":     len(stepsSlice),
-						"group_snapshot":          describeGroup(group),
-						"note":                    "caused by: parser keyed station lookup by PCBA only; a step array of one type attached to the only station record of another type. See parser WARN 'Test steps matched a station of DIFFERENT type'.",
-					}),
-				)
-				return fmt.Errorf("mismatch in TestSteps count and TestStationRecords count for PCBA %s", key)
-			}
-			// Verify intended pairing — if station type doesn't agree with
-			// inferred step type, we're silently inserting steps against the
-			// wrong station. Log at WARN so we can see it in dispatch too.
-			inferredType, _ := parser.InferStationTypeFromSteps(stepsSlice)
-			pairedType := strings.TrimSpace(group.TestStationRecords[i].TestStation)
-			if inferredType != "" && pairedType != "" && inferredType != pairedType {
-				logger.Warn("Dispatcher paired step array to station of different type",
-					logger.WithFields(map[string]interface{}{
-						"pcba":          key,
-						"array_index":   i,
-						"inferred_type": inferredType,
-						"paired_type":   pairedType,
-						"step_count":    len(stepsSlice),
-						"note":          "steps will be inserted under a station of mismatched type. Data is still stored but semantically incorrect until the structural fix lands.",
-					}),
-				)
-			}
-			if err := s.testStepService.InsertTestSteps(ctx, stepsSlice, testStationIDs[i]); err != nil {
-				logger.Error("Failed to insert TestSteps",
-					err,
-					logger.WithFields(map[string]interface{}{
-						"pcba":                   key,
-						"test_station_record_id": testStationIDs[i],
-						"step_count":             len(stepsSlice),
-					}),
-				)
-				return fmt.Errorf("failed to insert TestSteps for TestStationRecordID %d: %w", testStationIDs[i], err)
+	logger.Info("Dispatch finished",
+		logger.WithFields(map[string]interface{}{
+			"group_count":          len(groups),
+			"groups_ok":            groupsOK,
+			"groups_failed":        groupsFailed,
+			"groups_with_excess":   groupsWithExcess,
+			"groups_mismatch_type": groupsMismatchType,
+		}),
+	)
+
+	if len(groups) > 0 && groupsOK == 0 {
+		return fmt.Errorf("all %d groups failed to dispatch; see WARN events for details", len(groups))
+	}
+	return nil
+}
+
+// groupDispatchResult summarises the outcome of dispatching one group.
+// err == nil means the group was processed (possibly partially — see
+// unmatchedStepArrays). A non-nil err means the group was abandoned mid-way
+// and the caller should log+continue.
+type groupDispatchResult struct {
+	err                 error
+	failedStage         string // "download" | "logistic" | "station" | "steps"
+	unmatchedStepArrays int    // step arrays we couldn't pair with a station (excess)
+	typeMismatches      int    // paired but station_type != inferred step type
+}
+
+// dispatchSingleGroup inserts all rows for one grouped PCBA. Returns the
+// outcome via groupDispatchResult. Errors from DB operations are returned;
+// structural "more step arrays than station records" is logged as WARN and
+// reported via unmatchedStepArrays (not an error).
+func (s *dispatcherService) dispatchSingleGroup(ctx context.Context, group dto.GroupedDataDTO) groupDispatchResult {
+	key := groupKey(group)
+
+	logger.Debug("Dispatching group",
+		logger.WithFields(map[string]interface{}{
+			"pcba":                 key,
+			"has_download":         group.DownloadInfo != (dto.DownloadInfoDTO{}),
+			"station_record_count": len(group.TestStationRecords),
+			"step_array_count":     len(group.TestSteps),
+		}),
+	)
+
+	if (group.DownloadInfo != dto.DownloadInfoDTO{}) {
+		if err := s.downloadInfoService.InsertDownloadInfo(ctx, group.DownloadInfo); err != nil {
+			logger.Error("Failed to insert DownloadInfo",
+				err,
+				logger.WithFields(map[string]interface{}{
+					"pcba":     key,
+					"tcu_pcba": group.DownloadInfo.TcuPCBANumber,
+				}),
+			)
+			return groupDispatchResult{
+				err:         fmt.Errorf("failed to insert DownloadInfo for PCBA %s: %w", key, err),
+				failedStage: "download",
 			}
 		}
 	}
 
-	logger.Info("Dispatch finished", logger.WithFields(map[string]interface{}{
-		"group_count": len(groups),
-	}))
-	return nil
+	testStationIDs := make([]int, 0, len(group.TestStationRecords))
+	for _, tsr := range group.TestStationRecords {
+		if (tsr.LogisticData == dto.LogisticDataDTO{}) {
+			logger.Error("Station record has no LogisticData",
+				logger.WithFields(map[string]interface{}{
+					"station_type": strings.TrimSpace(tsr.TestStation),
+					"group_key":    key,
+				}),
+			)
+			return groupDispatchResult{
+				err:         fmt.Errorf("missing LogisticData for PCBA %s: cannot insert TestStationRecord", key),
+				failedStage: "logistic",
+			}
+		}
+
+		logisticDataID, err := s.logisticDataService.GetOrInsertLogisticData(ctx, tsr.LogisticData)
+		if err != nil {
+			logger.Error("Failed to insert LogisticData",
+				err,
+				logger.WithFields(map[string]interface{}{
+					"pcba":             strings.TrimSpace(tsr.LogisticData.PCBANumber),
+					"product_sn":       strings.TrimSpace(tsr.LogisticData.ProductSN),
+					"station_type":     strings.TrimSpace(tsr.TestStation),
+					"logistic_data_id": logisticDataID,
+					"group_key":        key,
+				}),
+			)
+			return groupDispatchResult{
+				err:         fmt.Errorf("failed to insert LogisticData for PCBA %s: %w", key, err),
+				failedStage: "logistic",
+			}
+		}
+		if logisticDataID == 0 {
+			logger.Error("Resolved LogisticDataID is 0",
+				logger.WithFields(map[string]interface{}{
+					"pcba":         strings.TrimSpace(tsr.LogisticData.PCBANumber),
+					"product_sn":   strings.TrimSpace(tsr.LogisticData.ProductSN),
+					"station_type": strings.TrimSpace(tsr.TestStation),
+					"group_key":    key,
+					"dto_snapshot": tsr.LogisticData,
+				}),
+			)
+			return groupDispatchResult{
+				err:         fmt.Errorf("resolved LogisticDataID is 0 for PCBA %s", key),
+				failedStage: "logistic",
+			}
+		}
+
+		testStationID, err := s.testStationService.InsertTestStationRecord(ctx, tsr, logisticDataID)
+		if err != nil {
+			logger.Error("Failed to insert TestStationRecord",
+				err,
+				logger.WithFields(map[string]interface{}{
+					"pcba":             strings.TrimSpace(tsr.LogisticData.PCBANumber),
+					"station_type":     strings.TrimSpace(tsr.TestStation),
+					"logistic_data_id": logisticDataID,
+					"group_key":        key,
+				}),
+			)
+			return groupDispatchResult{
+				err:         fmt.Errorf("failed to insert TestStationRecord for PCBA %s: %w", key, err),
+				failedStage: "station",
+			}
+		}
+		testStationIDs = append(testStationIDs, testStationID)
+	}
+
+	result := groupDispatchResult{}
+
+	for i, stepsSlice := range group.TestSteps {
+		if i >= len(testStationIDs) {
+			// Phase 0: no longer fatal. Log once with full context and skip
+			// the unmatched step arrays. Downstream fix will pair them
+			// properly by (PCBA, StationType).
+			if result.unmatchedStepArrays == 0 {
+				inferredType, stepPCBA := parser.InferStationTypeFromSteps(stepsSlice)
+				logger.Warn("Skipping unmatched step array(s) — more step arrays than station records",
+					logger.WithFields(map[string]interface{}{
+						"pcba":                      key,
+						"station_record_count":      len(testStationIDs),
+						"step_array_count":          len(group.TestSteps),
+						"first_unmatched_index":     i,
+						"first_unmatched_inferred":  inferredType,
+						"first_unmatched_scan_pcba": stepPCBA,
+						"first_unmatched_steps":     len(stepsSlice),
+						"group_snapshot":            describeGroup(group),
+						"note":                      "Phase 0 hotfix: excess step arrays are skipped, not causing a fatal error. Root cause is either Bug #1 (missing StationInformation of inferred type) or retry asymmetry — see docs/problem.md.",
+					}),
+				)
+			}
+			result.unmatchedStepArrays = len(group.TestSteps) - len(testStationIDs)
+			break
+		}
+
+		inferredType, _ := parser.InferStationTypeFromSteps(stepsSlice)
+		pairedType := strings.TrimSpace(group.TestStationRecords[i].TestStation)
+		if inferredType != "" && pairedType != "" && inferredType != pairedType {
+			result.typeMismatches++
+			logger.Warn("Dispatcher paired step array to station of different type",
+				logger.WithFields(map[string]interface{}{
+					"pcba":          key,
+					"array_index":   i,
+					"inferred_type": inferredType,
+					"paired_type":   pairedType,
+					"step_count":    len(stepsSlice),
+					"note":          "steps will be inserted under a station of mismatched type. Data is still stored but semantically incorrect until the structural fix (Phase 1) lands.",
+				}),
+			)
+		}
+		if err := s.testStepService.InsertTestSteps(ctx, stepsSlice, testStationIDs[i]); err != nil {
+			logger.Error("Failed to insert TestSteps",
+				err,
+				logger.WithFields(map[string]interface{}{
+					"pcba":                   key,
+					"test_station_record_id": testStationIDs[i],
+					"step_count":             len(stepsSlice),
+				}),
+			)
+			result.err = fmt.Errorf("failed to insert TestSteps for TestStationRecordID %d: %w", testStationIDs[i], err)
+			result.failedStage = "steps"
+			return result
+		}
+	}
+
+	return result
 }
