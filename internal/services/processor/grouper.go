@@ -112,9 +112,121 @@ func GroupByPCBANumber(parsed []interface{}) ([]dto.GroupedDataDTO, error) {
 	}
 
 	result := make([]dto.GroupedDataDTO, 0, len(groups))
-	for _, g := range groups {
+	// Diagnostic counters for the grouping phase.
+	var (
+		groupsWithDownload int
+		groupsWithAnyStation int
+		groupsWithAnySteps int
+		stationsByType = map[string]int{}
+		stepsByType    = map[string]int{}
+		mismatchGroups int // groups where step count > station record count (pre-dispatch)
+	)
+	for key, g := range groups {
+		if (g.DownloadInfo != dto.DownloadInfoDTO{}) {
+			groupsWithDownload++
+		}
+		if len(g.TestStationRecords) > 0 {
+			groupsWithAnyStation++
+			for _, tsr := range g.TestStationRecords {
+				stationsByType[strings.TrimSpace(tsr.TestStation)]++
+			}
+		}
+		if len(g.TestSteps) > 0 {
+			groupsWithAnySteps++
+			for _, steps := range g.TestSteps {
+				// Inline classifier (can't import parser here — cycle).
+				var t string
+				for _, s := range steps {
+					switch s.TestStepName {
+					case "PCBA Scan":
+						t = "PCBA"
+					case "Compare PCBA Serial Number", "Valid PCBA Serial Number":
+						t = "Final"
+					}
+					if t != "" {
+						break
+					}
+				}
+				if t == "" {
+					t = "unknown"
+				}
+				stepsByType[t]++
+			}
+		}
+		if len(g.TestSteps) > len(g.TestStationRecords) {
+			mismatchGroups++
+			// Classify the mismatch cause: is it a missing station (Bug #1) or
+			// a retry-asymmetry (same type, unequal counts)?
+			stationsCountByType := map[string]int{}
+			for _, tsr := range g.TestStationRecords {
+				stationsCountByType[strings.TrimSpace(tsr.TestStation)]++
+			}
+			stepsCountByType := map[string]int{}
+			for _, steps := range g.TestSteps {
+				var t string
+				for _, s := range steps {
+					switch s.TestStepName {
+					case "PCBA Scan":
+						t = "PCBA"
+					case "Compare PCBA Serial Number", "Valid PCBA Serial Number":
+						t = "Final"
+					}
+					if t != "" {
+						break
+					}
+				}
+				if t == "" {
+					t = "unknown"
+				}
+				stepsCountByType[t]++
+			}
+			// Determine the category
+			var cause string
+			missing := []string{}
+			asymmetric := []string{}
+			for t, stepsN := range stepsCountByType {
+				stationsN := stationsCountByType[t]
+				if stationsN == 0 {
+					missing = append(missing, t)
+				} else if stepsN > stationsN {
+					asymmetric = append(asymmetric, t)
+				}
+			}
+			if len(missing) > 0 && len(asymmetric) == 0 {
+				cause = "bug1_missing_station_record_of_type"
+			} else if len(asymmetric) > 0 && len(missing) == 0 {
+				cause = "retry_asymmetry_same_type"
+			} else {
+				cause = "mixed"
+			}
+			logger.Warn("Group has more step arrays than station records (will fail in dispatcher)",
+				logger.WithFields(map[string]interface{}{
+					"group_key":              key,
+					"station_record_count":   len(g.TestStationRecords),
+					"step_array_count":       len(g.TestSteps),
+					"has_download":           g.DownloadInfo != (dto.DownloadInfoDTO{}),
+					"stations_by_type":       stationsCountByType,
+					"steps_by_type":          stepsCountByType,
+					"cause":                  cause,
+					"missing_station_types":  missing,
+					"asymmetric_types":       asymmetric,
+				}),
+			)
+		}
 		result = append(result, *g)
 	}
+
+	logger.Info("Grouping summary",
+		logger.WithFields(map[string]interface{}{
+			"groups_total":          len(groups),
+			"groups_with_download":  groupsWithDownload,
+			"groups_with_station":   groupsWithAnyStation,
+			"groups_with_steps":     groupsWithAnySteps,
+			"stations_by_type":      stationsByType,
+			"step_arrays_by_type":   stepsByType,
+			"groups_with_mismatch":  mismatchGroups,
+		}),
+	)
 
 	return result, nil
 }
